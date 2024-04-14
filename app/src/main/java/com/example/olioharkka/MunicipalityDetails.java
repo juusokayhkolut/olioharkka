@@ -1,10 +1,11 @@
 package com.example.olioharkka;
 
+import org.json.JSONObject;
+
 public class MunicipalityDetails {
     private String name;
     private int population;
-    private double latitude;
-    private double longitude;
+    private String wikipedia;
 
     public String getName() {
         return name;
@@ -22,26 +23,17 @@ public class MunicipalityDetails {
         this.population = population;
     }
 
-    public double getLatitude() {
-        return latitude;
+    public String getWikipedia() {
+        return wikipedia;
     }
 
-    public void setLatitude(double latitude) {
-        this.latitude = latitude;
+    public void setWikipedia(String wikipedia) {
+        this.wikipedia = wikipedia;
     }
 
-    public double getLongitude() {
-        return longitude;
-    }
-
-    public void setLongitude(double longitude) {
-        this.longitude = longitude;
-    }
-
-    public MunicipalityDetails(String name, int population, double latitude, double longitude) {
+    public MunicipalityDetails(String name, int population, String wikipedia) {
         this.name = name;
         this.population = population;
-        this.latitude = latitude;
-        this.longitude = longitude;
+        this.wikipedia = wikipedia;
     }
 }

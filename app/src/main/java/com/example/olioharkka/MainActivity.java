@@ -1,5 +1,7 @@
 package com.example.olioharkka;
 
+import static com.example.olioharkka.ApiClient.searchForMunicipalityPopulation;
+
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -13,7 +15,10 @@ import android.widget.ListView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import org.json.JSONObject;
+
 import java.util.ArrayList;
+import java.util.concurrent.CompletableFuture;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -54,36 +59,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void searchForMunicipality(String municipalityName) {
-        // Placeholder: Add logic for searching municipality by name
-        // This could involve querying an API or a local database
 
-        MunicipalityService service = ApiClient.getClient().create(MunicipalityService.class);
-        Call<MunicipalityDetails> call = service.getMunicipalityDetails(municipalityName);
-        call.enqueue(new Callback<MunicipalityDetails>() {
-            @Override
-            public void onResponse(Call<MunicipalityDetails> call, Response<MunicipalityDetails> response) {
-                if (response.isSuccessful()) {
-                    // Käsittely onnistuneelle vastaukselle
-                    MunicipalityDetails details = response.body();
-                    // Päivitä UI täällä
-                }
-            }
-
-            @Override
-            public void onFailure(Call<MunicipalityDetails> call, Throwable t) {
-                // Käsittely epäonnistuneelle kutsulle
-            }
-        });
-
+        CompletableFuture<JSONObject> response = searchForMunicipalityPopulation("");
+        response.thenAccept(json -> System.out.println(json.optString("class")))
+                .exceptionally(e -> {
+                    System.out.println("Error: " + e.getMessage());
+                    return null;
+                });
 
         if (!recentSearches.contains(municipalityName)) {
             recentSearches.add(municipalityName);
             adapter.notifyDataSetChanged();
         }
 
-        // Placeholder: Intent to navigate to municipality details page
-        // Intent intent = new Intent(MainActivity.this, MunicipalityDetailsActivity.class);
-        // intent.putExtra("MUNICIPALITY_NAME", municipalityName);
-        // startActivity(intent);
+        //Intent intent = new Intent(MainActivity.this, MunicipalityDetailsActivity.class);
+        //intent.putExtra("MUNICIPALITY_NAME", municipalityName);
+        //startActivity(intent);
     }
 }
