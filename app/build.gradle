@@ -30,6 +30,13 @@ android {
     buildFeatures {
         viewBinding true
     }
+    sourceSets {
+        main {
+            java {
+                srcDirs 'src/main/java', 'src/main/java/2'
+            }
+        }
+    }
 }
 
 dependencies {
@@ -48,4 +55,9 @@ dependencies {
 
     /*JSON*/
     implementation 'org.json:json:20210307'
+
+    /*Google Maps*/
+    implementation 'com.google.android.gms:play-services-maps:18.0.0'
+    implementation 'com.google.maps:google-maps-services:2.2.0'
+
 }

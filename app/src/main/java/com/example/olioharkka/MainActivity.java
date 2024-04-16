@@ -4,25 +4,17 @@ import static com.example.olioharkka.ApiClient.searchForMunicipalityPopulation;
 
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.viewpager2.widget.ViewPager2;
 
 import android.content.Intent;
-import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 
-import androidx.appcompat.app.AppCompatActivity;
-
-import org.json.JSONObject;
-
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -48,32 +40,21 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 String searchText = searchField.getText().toString();
-                searchForMunicipality(searchText);
+
+                if (!recentSearches.contains(searchText)) {
+                    recentSearches.add(searchText);
+                    adapter.notifyDataSetChanged();
+                }
+
+                Intent intent = new Intent(MainActivity.this, TabActivity.class);
+                intent.putExtra("MUNICIPALITY_NAME", searchText);
+                startActivity(intent);
             }
         });
 
         recentSearchesList.setOnItemClickListener((parent, view, position, id) -> {
             String selectedItem = recentSearches.get(position);
-            searchForMunicipality(selectedItem);
+            searchField.setText(selectedItem);
         });
-    }
-
-    private void searchForMunicipality(String municipalityName) {
-
-        CompletableFuture<JSONObject> response = searchForMunicipalityPopulation("");
-        response.thenAccept(json -> System.out.println(json.optString("class")))
-                .exceptionally(e -> {
-                    System.out.println("Error: " + e.getMessage());
-                    return null;
-                });
-
-        if (!recentSearches.contains(municipalityName)) {
-            recentSearches.add(municipalityName);
-            adapter.notifyDataSetChanged();
-        }
-
-        //Intent intent = new Intent(MainActivity.this, MunicipalityDetailsActivity.class);
-        //intent.putExtra("MUNICIPALITY_NAME", municipalityName);
-        //startActivity(intent);
     }
 }

@@ -13,6 +13,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.OlioHarkka"
         tools:targetApi="31">
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyCjT8glHMEFfOptHkqGi6axdCuvZB3vpEE" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -21,6 +26,16 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".MunicipalityDetailsFragment"
+            android:exported="true">
+        </activity>
+
+        <activity
+            android:name=".TabActivity"
+            android:exported="true">
         </activity>
     </application>
 
