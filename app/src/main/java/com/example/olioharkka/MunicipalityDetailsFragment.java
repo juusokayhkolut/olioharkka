@@ -1,5 +1,6 @@
 package com.example.olioharkka;
 
+import static com.example.olioharkka.ApiClient.getPoliticalSpread;
 import static com.example.olioharkka.ApiClient.searchForMunicipalityPopulation;
 
 import android.os.Bundle;
@@ -110,7 +111,12 @@ public class MunicipalityDetailsFragment extends Fragment implements OnMapReadyC
         // wikipedia
         wikipediaLinkView.setText("Wikipedia-linkki: https://fi.wikipedia.org/wiki/" + municipality);
 
+        // map
         searchAndShowCity(municipality);
+
+        // political spread
+        System.out.println("_ASDJHAJSHDKAHSKJDHKJASDHJKAS____");
+        System.out.println(getPoliticalSpread(municipality));
     }
 
     private Integer getMunicipalityPopulation(String municipalityName) {
@@ -131,7 +137,7 @@ public class MunicipalityDetailsFragment extends Fragment implements OnMapReadyC
         GeocodingResult[] results;
         try {
             results = GeocodingApi.geocode(context, cityName).await();
-            System.out.println("________MAPS DETILAS______"_);
+            System.out.println("________MAPS DETILAS______");
             System.out.println(results);
             if (results != null && results.length > 0) {
                 GeocodingResult result = results[0];
