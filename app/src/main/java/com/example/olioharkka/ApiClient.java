@@ -1,6 +1,8 @@
 package com.example.olioharkka;
 
+
 import android.content.Context;
+import android.content.res.AssetManager;
 import android.content.res.Resources;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -54,29 +56,6 @@ public class ApiClient {
     }
 
 
-        private static String getAreaCode(String municipality) {
-            String areaCode = "";
-
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(Resources.getSystem().openRawResource(R.raw.kunta_koodi)))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    String[] parts = line.split(",");
-                    String code = parts[2].toLowerCase();
-
-                    System.out.println(code);
-
-                    if (code.equals(municipality.toLowerCase())) {
-                        areaCode = "KU" + parts[0];
-                        break;
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            return areaCode;
-        }
-
         public static CompletableFuture<Integer> searchForMunicipalityPopulation(String municipality) {
 
 
@@ -92,7 +71,7 @@ public class ApiClient {
 
                     String jsonInputString = "{"
                             + "\"query\": ["
-                            + "    {\"code\": \"Alue\", \"selection\": {\"filter\": \"item\", \"values\": [" + getAreaCode(municipality) + "]}},"
+                            + "    {\"code\": \"Alue\", \"selection\": {\"filter\": \"item\", \"values\": [" + CityCodeLookup.getCityCode(municipality) + "]}},"
                             + "    {\"code\": \"Tiedot\", \"selection\": {\"filter\": \"item\", \"values\": [\"vaesto\"]}},"
                             + "    {\"code\": \"Vuosi\", \"selection\": {\"filter\": \"item\", \"values\": [\"2022\"]}}"
                             + "  ],"
@@ -139,7 +118,7 @@ public class ApiClient {
 
                 String jsonInputString = "{"
                         + "\"query\": ["
-                        + "    {\"code\": \"Vaalipiiri ja kunta\", \"selection\": {\"filter\": \"item\", \"values\": [" + getAreaCode(municipality) + "]}},"
+                        + "    {\"code\": \"Vaalipiiri ja kunta\", \"selection\": {\"filter\": \"item\", \"values\": [" + CityCodeLookup.getCityCode(municipality) + "]}},"
                         + "    {\"code\": \"Tiedot\", \"selection\": {\"filter\": \"item\", \"values\": [\"osuus_ehd\"]}},"
                         + "  ],"
                         + "  \"response\": {\"format\": \"json-stat2\"}"
@@ -148,6 +127,7 @@ public class ApiClient {
                 try (OutputStream os = conn.getOutputStream()) {
                     byte[] input = jsonInputString.getBytes("utf-8");
                     os.write(input, 0, input.length);
+                    System.out.println(input);
                 }
 
                 StringBuilder responseContent = new StringBuilder();

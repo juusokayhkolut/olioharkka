@@ -1,7 +1,6 @@
 package com.example.olioharkka;
 
 import static com.example.olioharkka.ApiClient.getPoliticalSpread;
-import static com.example.olioharkka.ApiClient.searchForMunicipalityPopulation;
 
 import android.os.Bundle;
 import android.view.View;
@@ -120,7 +119,7 @@ public class MunicipalityDetailsFragment extends Fragment implements OnMapReadyC
     }
 
     private Integer getMunicipalityPopulation(String municipalityName) {
-        CompletableFuture<Integer> response = searchForMunicipalityPopulation(municipalityName);
+        CompletableFuture<Integer> response = ApiClient.searchForMunicipalityPopulation(municipalityName);
         CompletableFuture<Integer> populationForMunicipality = response.thenApply(population -> {
             System.out.println("Population: " + population);
             return population;

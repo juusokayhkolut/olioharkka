@@ -1,7 +1,5 @@
 package com.example.olioharkka;
 
-import static com.example.olioharkka.ApiClient.searchForMunicipalityPopulation;
-
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager2.widget.ViewPager2;
