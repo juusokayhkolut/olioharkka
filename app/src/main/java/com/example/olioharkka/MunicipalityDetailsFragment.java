@@ -1,6 +1,8 @@
 package com.example.olioharkka;
 
 import static com.example.olioharkka.ApiClient.getPoliticalSpread;
+import static com.example.olioharkka.ApiClient.getWeather;
+import static com.example.olioharkka.ApiClient.searchForMunicipalityPopulation;
 
 import android.os.Bundle;
 import android.view.View;
@@ -24,6 +26,10 @@ import java.io.IOException;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public class MunicipalityDetailsFragment extends Fragment implements OnMapReadyCallback {
@@ -86,8 +92,8 @@ public class MunicipalityDetailsFragment extends Fragment implements OnMapReadyC
         super.onViewCreated(view, savedInstanceState);
 
         // get data
-        Bundle args = getArguments();
-        String municipality = args.getString("municipality");
+        DataManager dataManager = DataManager.getInstance();
+        String municipality = dataManager.getData("municipality");
 
         municipalityNameView = view.findViewById(R.id.municipalityName);
         populationView = view.findViewById(R.id.population);
@@ -98,31 +104,37 @@ public class MunicipalityDetailsFragment extends Fragment implements OnMapReadyC
 
         municipalityNameView.setText(municipality);
         populationView.setText("Asukasmäärä: Placeholder");
-        wikipediaLinkView.setText("Wikipedia-linkki: https://fi.wikipedia.org/wiki/Helsinki");
+        wikipediaLinkView.setText("Wikipedia-linkki: Placeholder");
         politicalDivisionView.setText("Poliittinen jakauma: Placeholder");
         weatherView.setText("Sää: Placeholder");
         incomeLevelView.setText("Tulotaso: Placeholder");
 
         // population
-        Integer municipalityPopulation = getMunicipalityPopulation(municipality);
+        Integer municipalityPopulation = searchForMunicipalityPopulation(municipality);
         if (municipalityPopulation != null) {
             populationView.setText("Asukasmäärä: " + municipalityPopulation.toString());
+            dataManager.setData("population", municipalityPopulation.toString());
         }
 
         // wikipedia
         wikipediaLinkView.setText("Wikipedia-linkki: https://fi.wikipedia.org/wiki/" + municipality);
+        dataManager.setData("wikipedia_link", "https://fi.wikipedia.org/wiki/" + municipality);
 
-        // map
+        // map -- ei toimi emulaattorissa
         searchAndShowCity(municipality);
 
         // political spread
-        System.out.println("_ASDJHAJSHDKAHSKJDHKJASDHJKAS____");
-        System.out.println(getPoliticalSpread(municipality));
-    }
+        //System.out.println("_ASDJHAJSHDKAHSKJDHKJASDHJKAS____");
+        //System.out.println(getPoliticalSpread(municipality));
 
-    private Integer getMunicipalityPopulation(String municipalityName) {
-        Integer population = ApiClient.searchForMunicipalityPopulation(municipalityName);
-        return population;
+        // weather
+        Map<String, Object> weatherMap = getWeather(municipality);
+        weatherView.setText("Temperature (C): "+ BigDecimal.valueOf((Double) weatherMap.get("temp") - 273.1).round(new MathContext(2, RoundingMode.HALF_UP))+"\n" +
+                            "Wind Speed (m/s): " + weatherMap.get("wind_speed")+"\n" +
+                            "Humidity: " + weatherMap.get("HUMIDITY")+"");
+        dataManager.setData("weather", "Temperature (C): "+ BigDecimal.valueOf((Double) weatherMap.get("temp") - 273.1).round(new MathContext(2, RoundingMode.HALF_UP))+"\n" +
+                "Wind Speed (m/s): " + weatherMap.get("wind_speed")+"\n" +
+                "Humidity: " + weatherMap.get("HUMIDITY")+"");
     }
 
     private void searchAndShowCity(String cityName) {
@@ -153,6 +165,16 @@ public class MunicipalityDetailsFragment extends Fragment implements OnMapReadyC
         } catch (IOException | InterruptedException | com.google.maps.errors.ApiException e) {
             e.printStackTrace();
         }
+    }
+
+    public static <T> T getNestedValue(Map map, String... keys) {
+        Object value = map;
+
+        for (String key : keys) {
+            value = ((Map) value).get(key);
+        }
+
+        return (T) value;
     }
 
 }

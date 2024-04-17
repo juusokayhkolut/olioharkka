@@ -21,15 +21,11 @@ public class TabPagerAdapter extends FragmentStateAdapter {
     @NonNull
     @Override
     public Fragment createFragment(int position) {
+        DataManager.getInstance().setData("municipality", mData[0]);
 
         switch (position) {
             case 0:
-                MunicipalityDetailsFragment fragment = new MunicipalityDetailsFragment();
-                Bundle bundle = new Bundle();
-                bundle.putString("municipality", mData[0]); // Replace "key" with your key and "value" with the actual data
-                fragment.setArguments(bundle);
-
-                return fragment;
+                return new MunicipalityDetailsFragment();
             case 1:
                 return new CompareFragment();
             case 2:

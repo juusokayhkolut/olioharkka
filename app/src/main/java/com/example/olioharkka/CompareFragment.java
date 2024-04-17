@@ -23,11 +23,10 @@ public class CompareFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        DataManager dataManager = DataManager.getInstance();
+        String munipality1 = dataManager.getData("municipality");
 
-        Bundle args = getArguments();
-        String municipality = args.getString("municipality");
-
-        municipalityNameView = view.findViewById(R.id.municipalityName);
-        municipalityNameView.setText(municipality);
+        TextView municipality1NameView = view.findViewById(R.id.municipality1Name);
+        municipality1NameView.setText(munipality1);
     }
 }
