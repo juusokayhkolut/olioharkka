@@ -33,8 +33,24 @@ public class TabActivity extends AppCompatActivity {
         pagerAdapter.setSwipeEnabled(false);
 
         new TabLayoutMediator(tabLayout, viewPager,
-                (tab, position) -> tab.setText("Tab " + (position + 1))
+                (tab, position) -> {
+                    switch (position) {
+                        case 0:
+                            tab.setText("Perustiedot");
+                            break;
+                        case 1:
+                            tab.setText("Vertaa");
+                            break;
+                        case 2:
+                            tab.setText("Quiz");
+                            break;
+                        default:
+                            tab.setText("Tab " + (position + 1));
+                            break;
+                    }
+                }
         ).attach();
+
     }
 
     @Override
