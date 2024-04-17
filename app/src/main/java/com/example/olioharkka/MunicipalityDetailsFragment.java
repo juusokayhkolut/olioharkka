@@ -105,7 +105,9 @@ public class MunicipalityDetailsFragment extends Fragment implements OnMapReadyC
 
         // population
         Integer municipalityPopulation = getMunicipalityPopulation(municipality);
-        populationView.setText("Asukasmäärä: " + municipalityPopulation.toString());
+        if (municipalityPopulation != null) {
+            populationView.setText("Asukasmäärä: " + municipalityPopulation.toString());
+        }
 
         // wikipedia
         wikipediaLinkView.setText("Wikipedia-linkki: https://fi.wikipedia.org/wiki/" + municipality);
@@ -119,16 +121,8 @@ public class MunicipalityDetailsFragment extends Fragment implements OnMapReadyC
     }
 
     private Integer getMunicipalityPopulation(String municipalityName) {
-        CompletableFuture<Integer> response = ApiClient.searchForMunicipalityPopulation(municipalityName);
-        CompletableFuture<Integer> populationForMunicipality = response.thenApply(population -> {
-            System.out.println("Population: " + population);
-            return population;
-        }).exceptionally(e -> {
-            System.out.println("Error: " + e.getMessage());
-            return null;
-        });
-
-        return populationForMunicipality.join();
+        Integer population = ApiClient.searchForMunicipalityPopulation(municipalityName);
+        return population;
     }
 
     private void searchAndShowCity(String cityName) {

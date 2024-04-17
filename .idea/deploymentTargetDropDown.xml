@@ -10,12 +10,12 @@
               <deviceKey>
                 <Key>
                   <type value="VIRTUAL_DEVICE_PATH" />
-                  <value value="$USER_HOME$/.android/avd/Puhelin.avd" />
+                  <value value="$USER_HOME$/.android/avd/Sheesh.avd" />
                 </Key>
               </deviceKey>
             </Target>
           </targetSelectedWithDropDown>
-          <timeTargetWasSelectedWithDropDown value="2024-04-14T16:03:37.386313Z" />
+          <timeTargetWasSelectedWithDropDown value="2024-04-17T13:39:56.752840Z" />
         </State>
       </entry>
     </value>

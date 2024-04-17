@@ -4,6 +4,9 @@ package com.example.olioharkka;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
+import android.os.StrictMode;
+import android.util.Log;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,6 +17,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
@@ -55,128 +59,208 @@ public class ApiClient {
         return Optional.empty();
     }
 
+    public static Integer searchForMunicipalityPopulation(String municipality) {
+        Integer population = 0;
 
-        public static CompletableFuture<Integer> searchForMunicipalityPopulation(String municipality) {
+        HttpURLConnection connection = null;
+        BufferedReader reader = null;
+
+        StrictMode.ThreadPolicy gfgPolicy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        StrictMode.setThreadPolicy(gfgPolicy);
+
+        try {
+            URL url = new URL("https://pxdata.stat.fi:443/PxWeb/api/v1/en/StatFin/vaerak/statfin_vaerak_pxt_11ra.px");
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setDoOutput(true);
+
+            String jsonInputString =    "{\n" +
+                                        "    \"query\": [\n" +
+                                        "        {\n" +
+                                        "            \"code\": \"Alue\",\n" +
+                                        "            \"selection\": {\n" +
+                                        "                \"filter\": \"item\",\n" +
+                                        "                \"values\": [\n" +
+                                        "                    \"" + CityCodeLookup.getCityCode(municipality) + "\"\n" +
+                                        "                ]\n" +
+                                        "            }\n" +
+                                        "        },\n" +
+                                        "        {\n" +
+                                        "            \"code\": \"Tiedot\",\n" +
+                                        "            \"selection\": {\n" +
+                                        "                \"filter\": \"item\",\n" +
+                                        "                \"values\": [\n" +
+                                        "                    \"vaesto\"\n" +
+                                        "                ]\n" +
+                                        "            }\n" +
+                                        "        },\n" +
+                                        "        {\n" +
+                                        "            \"code\": \"Vuosi\",\n" +
+                                        "            \"selection\": {\n" +
+                                        "                \"filter\": \"item\",\n" +
+                                        "                \"values\": [\n" +
+                                        "                    \"2022\"\n" +
+                                        "                ]\n" +
+                                        "            }\n" +
+                                        "        }\n" +
+                                        "    ],\n" +
+                                        "    \"response\": {\n" +
+                                        "        \"format\": \"json-stat2\"\n" +
+                                        "    }\n" +
+                                        "}";
 
 
-            return CompletableFuture.supplyAsync(() -> {
-                int population = 0;
-                try {
-                    URI uri = new URI("https://pxdata.stat.fi:443/PxWeb/api/v1/fi/StatFin/vaerak/statfin_vaerak_pxt_11ra.px");
-                    URL url = uri.toURL();
-                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                    conn.setRequestMethod("POST");
-                    conn.setRequestProperty("Content-Type", "application/json; utf-8");
-                    conn.setDoOutput(true);
+            try(OutputStream os = connection.getOutputStream()) {
+                byte[] input = jsonInputString.getBytes("utf-8");
+                os.write(input, 0, input.length);
+            }
 
-                    String jsonInputString = "{"
-                            + "\"query\": ["
-                            + "    {\"code\": \"Alue\", \"selection\": {\"filter\": \"item\", \"values\": [" + CityCodeLookup.getCityCode(municipality) + "]}},"
-                            + "    {\"code\": \"Tiedot\", \"selection\": {\"filter\": \"item\", \"values\": [\"vaesto\"]}},"
-                            + "    {\"code\": \"Vuosi\", \"selection\": {\"filter\": \"item\", \"values\": [\"2022\"]}}"
-                            + "  ],"
-                            + "  \"response\": {\"format\": \"json-stat2\"}"
-                            + "}";
+            connection.connect();
+            InputStream stream = connection.getInputStream();
 
-                    try (OutputStream os = conn.getOutputStream()) {
-                        byte[] input = jsonInputString.getBytes("utf-8");
-                        os.write(input, 0, input.length);
-                    }
+            reader = new BufferedReader(new InputStreamReader(stream));
 
-                    StringBuilder responseContent = new StringBuilder();
-                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"))) {
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            responseContent.append(line);
-                        }
-                    }
+            StringBuffer buffer = new StringBuffer();
+            String line = "";
 
-                    JSONArray populationList = new JSONObject(responseContent.toString()).getJSONArray("value");
+            while ((line = reader.readLine()) != null) {
+                buffer.append(line+"\n");
+                Log.d("Response: ", "> " + line);   //here u ll get whole response...... :-)
+            }
 
-                    population = Integer.parseInt(populationList.toString().replace("[", "").replace("]", "")); // [VALUE] => VALUE
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    //jsonResponse.put("error", "Error during request: " + e.getMessage());
-                    System.out.println(e);
+            Gson gson = new Gson();
+            ResponseData responseData = gson.fromJson(buffer.toString(), ResponseData.class);
+
+            JSONObject jsonObject = new JSONObject(buffer.toString());
+            population = Integer.parseInt(jsonObject.get("value").toString().replace("[", "").replace("]", ""));
+
+            return population;
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+            try {
+                if (reader != null) {
+                    reader.close();
                 }
-                return population;
-            });
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
+        return null;
+    }
 
-    public static CompletableFuture<Map<String, Object>> getPoliticalSpread(String municipality) {
+    public static Map<String, Object> getPoliticalSpread(String municipality) {
         // returns ["KOK": 100, "SDP": 100] etc
 
-        return CompletableFuture.supplyAsync(() -> {
-            Map<String, Object> politicalSpread = null;
-            try {
-                URI uri = new URI("https://pxdata.stat.fi:443/PxWeb/api/v1/fi/StatFin/kvaa/statfin_kvaa_pxt_12xf.px");
-                URL url = uri.toURL();
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("POST");
-                conn.setRequestProperty("Content-Type", "application/json; utf-8");
-                conn.setDoOutput(true);
+        StrictMode.ThreadPolicy gfgPolicy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        StrictMode.setThreadPolicy(gfgPolicy);
 
-                String jsonInputString = "{"
-                        + "\"query\": ["
-                        + "    {\"code\": \"Vaalipiiri ja kunta\", \"selection\": {\"filter\": \"item\", \"values\": [" + CityCodeLookup.getCityCode(municipality) + "]}},"
-                        + "    {\"code\": \"Tiedot\", \"selection\": {\"filter\": \"item\", \"values\": [\"osuus_ehd\"]}},"
-                        + "  ],"
-                        + "  \"response\": {\"format\": \"json-stat2\"}"
-                        + "}";
+        Map<String, Object> politicalSpread = null;
+        try {
+            URI uri = new URI("https://pxdata.stat.fi:443/PxWeb/api/v1/en/StatFin/kvaa/statfin_kvaa_pxt_12xf.px");
+            URL url = uri.toURL();
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json; utf-8");
+            conn.setDoOutput(true);
 
-                try (OutputStream os = conn.getOutputStream()) {
-                    byte[] input = jsonInputString.getBytes("utf-8");
-                    os.write(input, 0, input.length);
-                    System.out.println(input);
-                }
+            String jsonInputString =    "{\n" +
+                                        "    \"query\": [\n" +
+                                        "        {\n" +
+                                        "            \"code\": \"Vaalipiiri ja kunta\",\n" +
+                                        "            \"selection\": {\n" +
+                                        "                \"filter\": \"item\",\n" +
+                                        "                \"values\": [\n" +
+                                        "                    \"021543\"\n" +
+                                        "                ]\n" +
+                                        "            }\n" +
+                                        "        },\n" +
+                                        "        {\n" +
+                                        "            \"code\": \"Ehdokkaan sukupuoli\",\n" +
+                                        "            \"selection\": {\n" +
+                                        "                \"filter\": \"item\",\n" +
+                                        "                \"values\": [\n" +
+                                        "                    \"SSS\"\n" +
+                                        "                ]\n" +
+                                        "            }\n" +
+                                        "        },\n" +
+                                        "        {\n" +
+                                        "            \"code\": \"Tiedot\",\n" +
+                                        "            \"selection\": {\n" +
+                                        "                \"filter\": \"item\",\n" +
+                                        "                \"values\": [\n" +
+                                        "                    \"osuus_ehd\"\n" +
+                                        "                ]\n" +
+                                        "            }\n" +
+                                        "        }\n" +
+                                        "    ],\n" +
+                                        "    \"response\": {\n" +
+                                        "        \"format\": \"json-stat2\"\n" +
+                                        "    }\n" +
+                                        "}";
 
-                StringBuilder responseContent = new StringBuilder();
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"))) {
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        responseContent.append(line);
-                    }
-                }
-
-                JSONObject politicalSpreadListValues = new JSONObject(responseContent.toString());
-
-                JSONArray politicalSpreadList = new JSONObject(responseContent.toString()).getJSONArray("value");
-
-                Gson gson = new Gson();
-                ResponseData responseData = gson.fromJson(responseContent.toString(), ResponseData.class);
-                Map<String, Object> dimensionMap = responseData.getDimension();
-
-                // puolueNamesAndCodes -- "201": "SDP"
-                Map<String, Object> object1 = (Map<String, Object>) dimensionMap.get("Puolue");
-                Map<String, Object> object2 = (Map<String, Object>) object1.get("category");
-                Map<String, Object> puolueNamesAndCodes = (Map<String, Object>) object2.get("label");
-
-                // puoluePlacement -- "203": 1
-                Map<String, Object> object12 = (Map<String, Object>) dimensionMap.get("Puolue");
-                Map<String, Object> object22 = (Map<String, Object>) object12.get("category");
-                Map<String, Object> puoluePlacement = (Map<String, Object>) object22.get("index");
-
-                // puoluePlacement -- "203": 1
-                List<Integer> puolueValues = (List<Integer>) dimensionMap.get("value");
-
-                Map<String, Object> puolueAndPercent = null;
-
-                // make list
-                for (int i = 0; i < puolueNamesAndCodes.size(); i++) {
-                    Optional<String> puolueCode = getKeyByValue(puoluePlacement, i);
-                    String puolueName = puolueNamesAndCodes.get(puolueCode).toString();
-
-                    puolueAndPercent.put(puolueName, puolueNamesAndCodes);
-                }
-
-                politicalSpread = puolueAndPercent;
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                //jsonResponse.put("error", "Error during request: " + e.getMessage());
-                System.out.println(e);
+            try (OutputStream os = conn.getOutputStream()) {
+                byte[] input = jsonInputString.getBytes("utf-8");
+                os.write(input, 0, input.length);
             }
-            return politicalSpread;
-        });
+
+            Map<String, Object> dimensionMap = getStringObjectMap(conn);
+            System.out.println("dimensionMap");
+            System.out.println(dimensionMap);
+
+            // puolueNamesAndCodes -- "201": "SDP"
+            Map<String, Object> object1 = (Map<String, Object>) dimensionMap.get("Puolue");
+            Map<String, Object> object2 = (Map<String, Object>) object1.get("category");
+            Map<String, Object> puolueNamesAndCodes = (Map<String, Object>) object2.get("label");
+
+            // puoluePlacement -- "203": 1
+            Map<String, Object> object12 = (Map<String, Object>) dimensionMap.get("Puolue");
+            Map<String, Object> object22 = (Map<String, Object>) object12.get("category");
+            Map<String, Object> puoluePlacement = (Map<String, Object>) object22.get("index");
+
+            // puoluePlacement -- "203": 1
+            List<Integer> puolueValues = (List<Integer>) dimensionMap.get("value");
+
+            Map<String, Object> puolueAndPercent = null;
+
+            // make list
+            for (int i = 0; i < puolueNamesAndCodes.size(); i++) {
+                Optional<String> puolueCode = getKeyByValue(puoluePlacement, i);
+                String puolueName = puolueNamesAndCodes.get(puolueCode).toString();
+
+                puolueAndPercent.put(puolueName, puolueNamesAndCodes);
+            }
+
+            politicalSpread = puolueAndPercent;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            //jsonResponse.put("error", "Error during request: " + e.getMessage());
+            System.out.println(e);
+        }
+        return politicalSpread;
+    }
+
+    private static Map<String, Object> getStringObjectMap(HttpURLConnection conn) throws IOException {
+        StringBuilder responseContent = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                responseContent.append(line);
+            }
+        }
+
+        Gson gson = new Gson();
+        ResponseData responseData = gson.fromJson(responseContent.toString(), ResponseData.class);
+        Map<String, Object> dimensionMap = responseData.getDimension();
+        return dimensionMap;
     }
 }
