@@ -177,4 +177,6 @@ public class MunicipalityDetailsFragment extends Fragment implements OnMapReadyC
         return (T) value;
     }
 
+
+
 }

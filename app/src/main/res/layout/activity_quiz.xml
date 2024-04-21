@@ -1,61 +1,137 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true">
+    tools:context=".QuizActivity">
 
-    <LinearLayout
+    <FrameLayout
+        android:id="@+id/fragment_container"
         android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+    <TextView
+        android:id="@+id/tvQuizResult"
+        android:layout_width="54dp"
+        android:layout_height="26dp"
+        android:layout_marginTop="150dp"
+        android:gravity="center"
+        android:text="QUIZ"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.007" />
+
+    <TextView
+        android:id="@+id/tvMunicipalityTextResult"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:gravity="center"
+        android:hint="MUNICIPALITY"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.504"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvQuizResult"
+        app:layout_constraintVertical_bias="0.062" />
 
-        <TextView
-            android:id="@+id/question"
+    <TextView
+        android:id="@+id/tvQuestion"
+        android:layout_width="283dp"
+        android:layout_height="64dp"
+        android:hint="QUESTION #"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvMunicipalityTextResult"
+        app:layout_constraintVertical_bias="0.137" />
+
+    <RadioGroup
+        android:id="@+id/rgQuiz"
+        android:layout_width="276dp"
+        android:layout_height="150dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.496"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvQuestion"
+        app:layout_constraintVertical_bias="0.111">
+
+        <RadioButton
+            android:id="@+id/rbOption1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="20sp"
-            android:padding="8dp"
-            android:text="Kysymys tulee tähän"/>
+            android:hint="Option 1" />
 
-        <RadioGroup
-            android:id="@+id/radioGroup"
+        <RadioButton
+            android:id="@+id/rbOption2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingTop="16dp">
+            android:hint="Option 2" />
 
-            <RadioButton
-                android:id="@+id/option1"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Vaihtoehto 1"/>
-
-            <RadioButton
-                android:id="@+id/option2"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Vaihtoehto 2"/>
-
-            <RadioButton
-                android:id="@+id/option3"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Vaihtoehto 3"/>
-
-            <RadioButton
-                android:id="@+id/option4"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Vaihtoehto 4"/>
-        </RadioGroup>
-
-        <Button
-            android:id="@+id/submitButton"
-            android:layout_width="wrap_content"
+        <RadioButton
+            android:id="@+id/rbOption3"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="24dp"
-            android:text="Lähetä"/>
-    </LinearLayout>
-</ScrollView>
+            android:hint="Option 3" />
+    </RadioGroup>
+
+    <Button
+        android:id="@+id/bNextQuestion"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:backgroundTint="#3F51B5"
+        android:onClick="updateQuestions"
+        android:text="Next Question"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/rgQuiz"
+        app:layout_constraintVertical_bias="0.322" />
+
+    <Button
+        android:id="@+id/bExitQuiz"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:backgroundTint="#3F51B5"
+        android:onClick="switchToQuizFragment"
+        android:text="Exit Quiz"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.019"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.023" />
+
+    <Button
+        android:id="@+id/bSubmit"
+        android:layout_width="137dp"
+        android:layout_height="45dp"
+        android:backgroundTint="#3F51B5"
+        android:onClick="submitAnswers"
+        android:text="Submit"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/rgQuiz" />
+
+    <TextView
+        android:id="@+id/tvQuestionIndex"
+        android:layout_width="102dp"
+        android:layout_height="30dp"
+        android:hint="# / 10"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.952"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.022" />
+</androidx.constraintlayout.widget.ConstraintLayout>
