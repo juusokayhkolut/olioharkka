@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -26,14 +27,22 @@ public class QuizOutcomeActivity extends AppCompatActivity {
             return insets;
         });
 
-        DataManager dataManager = DataManager.getInstance();
-        String municipality = dataManager.getData("municipality");
-        TextView MunicipalityTextResult = findViewById(R.id.tvMunicipalityOutcome);
-        MunicipalityTextResult.setText(municipality);
+        try {
+            DataManager dataManager = DataManager.getInstance();
+            String municipality = dataManager.getData("municipality");
+            TextView MunicipalityTextResult = findViewById(R.id.tvMunicipalityOutcome);
+            MunicipalityTextResult.setText(municipality);
+        } catch (Exception e) {
+            // Handles any exceptions that might occur while retrieving municipality data
+            e.printStackTrace(); // Prints stack trace for debugging
+            // Shows an error message to the user
+            Toast.makeText(this, "Error retrieving municipality data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+
 
         int score = getIntent().getIntExtra("SCORE", 0);
 
-        // Set the score to the TextView
+        // Sets the score to the TextView
         TextView scoreTextView = findViewById(R.id.tvScoreOutcome);
         scoreTextView.setText("Score:" + "\n" + String.valueOf(score) + "/10");
 

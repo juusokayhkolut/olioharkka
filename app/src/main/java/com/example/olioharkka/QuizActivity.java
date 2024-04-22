@@ -35,6 +35,7 @@ public class QuizActivity extends AppCompatActivity {
     private List<QuizQuestion> quizItems;
     private int score;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -45,10 +46,19 @@ public class QuizActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
         quizItems = new ArrayList<>();
         score = 0;
         currentQuestionIndex = 0;
-        initializeQuizQuestions();
+
+        try {
+            // Initializes quiz questions
+            initializeQuizQuestions();
+        } catch (Exception e) {
+            // Handles any exceptions that might occur during initialization
+            Toast.makeText(this, "Error initializing quiz: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            e.printStackTrace(); // Prints stack trace for debugging
+        }
 
         QuizQuestion currentQuizItem = quizItems.get(currentQuestionIndex);
 
@@ -65,15 +75,24 @@ public class QuizActivity extends AppCompatActivity {
         rbOption3.setText(answerOptions[2]);
 
         DataManager dataManager = DataManager.getInstance();
-        String municipality = dataManager.getData("municipality");
 
-        TextView MunicipalityTextResult = findViewById(R.id.tvMunicipalityTextResult);
-        MunicipalityTextResult.setText(municipality);
+        try {
+            String municipality = dataManager.getData("municipality");
+            TextView MunicipalityTextResult = findViewById(R.id.tvMunicipalityTextResult);
+            MunicipalityTextResult.setText(municipality);
+        } catch (Exception e) {
+            // Handles any exceptions that might occur while retrieving municipality data
+            Toast.makeText(this, "Error retrieving municipality data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            e.printStackTrace(); // Prints stack trace for debugging
+        }
     }
 
     private void initializeQuizQuestions() {
         //tähän muuttujia mihin tallennetaan oikeat vastaukset ja vastausvaihtoehdot
         // ATM TULEE null HUMIDITYSSÄ?
+
+        // Initializes quiz questions
+        // Modifies anwers options & correct answers based on chosen municipality
         DataManager dataManager = DataManager.getInstance();
         String municipality = dataManager.getData("municipality");
         Integer municipalityPopulation = searchForMunicipalityPopulation(municipality);
@@ -114,8 +133,6 @@ public class QuizActivity extends AppCompatActivity {
         sOption2 = dOption2 + " %";
 
         quizItems.add(new QuizQuestion("What is the humidity at the moment?", humidity, new String[]{humidity, sOption1, sOption2}));
-
-
         quizItems.add(new QuizQuestion("What is the support for the Perussuomalaiset party in the municipality?", "Correct answer", new String[]{"Correct answer", "Option 1", "Option 2"}));
         quizItems.add(new QuizQuestion("What is the support for the Vihreät party in the municipality?", "Correct answer", new String[]{"Correct answer", "Option 1", "Option 2"}));
         quizItems.add(new QuizQuestion("What is the average net income in the municipality?", "Correct answer", new String[]{"Correct answer", "Option 1", "Option 2"}));
@@ -135,6 +152,7 @@ public class QuizActivity extends AppCompatActivity {
 
         quizItems.add(new QuizQuestion("What is the least popular party in the municipality?", correctAnswer, new String[]{correctAnswer, sOption1, sOption2}));
 
+        // Creates a list that shuffles the answer options order
         List<String[]> shuffledOptions = new ArrayList<>();
 
         for (QuizQuestion question : quizItems) {
@@ -155,8 +173,7 @@ public class QuizActivity extends AppCompatActivity {
     }
 
     public void switchToQuizFragment(View view) {
-        //getSupportFragmentManager().popBackStack();
-
+        // Switches from current activity into the QuizFragment
         FragmentManager fragmentManager = getSupportFragmentManager();
         Fragment fragment = new QuizFragment();
         fragmentManager.beginTransaction()
@@ -167,9 +184,7 @@ public class QuizActivity extends AppCompatActivity {
     }
 
     public void updateQuestions(View view) {
-    //päivittää kysymyksen ja siihen liittyvät vastausvaihtoehdot seuraavaan (indeksin avulla) taulukosta
-    //tsekkaa onko vastaus oikein ja tallentaa nykyisen scoren
-
+        // Updates the activity layout based on the question index
         DataManager dataManager = DataManager.getInstance();
         String municipality = dataManager.getData("municipality");
 
@@ -222,13 +237,9 @@ public class QuizActivity extends AppCompatActivity {
     }
 
     public void submitAnswers(View view) {
-        // ONGELMA ON QuizResultActivityssa, pitäisi fixata.
-        // Muuten ei hätää, mutta jotain häikkää activity_quiz_result.xml filen kanssa. Sekoitti aiemmin id:tä activity_quizin kanssa
-        // Pitää katsoa läpi kaikki id:t ettei mee ristiin luokkien muuttujissa eikä xml.fileissä (activity_quiz, activiy_quiz_result)
+        // Sitten pitää katsoa että kysymykset & vastaukset mätsää, otetaan suoraan juuson koodista
 
-        //Sitten pitää katsoa että kysymykset & vastaukset mätsää, otetaan suoraan juuson koodista
-        //Kun nämä kunnossa, pitää siirtää koodit juusonkaan samaan fileen
-
+        // Submits the final score to the outcome layout and starts that activity
         RadioGroup rgQuiz = findViewById(R.id.rgQuiz);
         int selectedRadioButtonId = rgQuiz.getCheckedRadioButtonId();
 
@@ -250,33 +261,10 @@ public class QuizActivity extends AppCompatActivity {
         intent.putExtra("SCORE", score);
         startActivity(intent);
         finish();
-
-        /*
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        if (fragmentManager != null) {
-            Fragment fragment = fragmentManager.findFragmentById(R.id.fragment_container);
-            Bundle bundle = new Bundle();
-            bundle.putInt("SCORE", score);
-            fragment.setArguments(bundle);
-
-            // Set the score to the TextView
-
-            fragmentManager.beginTransaction()
-                    .replace(R.id.fragment_container, fragment)
-                    .commit();
-
-            // Call the method to update UI elements in the fragment
-            if (fragment instanceof QuizFragment) {
-                ((QuizFragment) fragment).updateUIElements(score);
-            }else {
-                System.out.println("VIRHE");
-            }
-        }
-        */
     }
 
     private static String chooseRandomParty(String correctParty) {
-
+        // Stores the main political parties and returns a party that differs from the input
         List<String> politicalParties = Arrays.asList(
                 "National Coalition Party (Kansallinen Kokoomus)",
                 "Social Democratic Party of Finland (Suomen Sosialidemokraattinen Puolue)",
@@ -292,11 +280,9 @@ public class QuizActivity extends AppCompatActivity {
 
         Random random = new Random();
         String chosenParty;
-
         do {
             chosenParty = politicalParties.get(random.nextInt(politicalParties.size()));
         } while (chosenParty.equals(correctParty));
-
         return chosenParty;
     }
 
