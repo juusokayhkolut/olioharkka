@@ -163,8 +163,6 @@ public class ApiClient {
     }
 
     public static Double getPopulationChange(String municipality) {
-        // returns ["KOK": 100, "SDP": 100] etc
-        // ei toimi
         BufferedReader reader = null;
 
         StrictMode.ThreadPolicy gfgPolicy = new StrictMode.ThreadPolicy.Builder().permitAll().build();

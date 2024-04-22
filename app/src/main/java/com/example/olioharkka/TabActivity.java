@@ -10,6 +10,7 @@ import androidx.appcompat.widget.Toolbar;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
+import android.view.View;
 public class TabActivity extends AppCompatActivity {
 
     @Override
@@ -19,6 +20,15 @@ public class TabActivity extends AppCompatActivity {
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setTitle("Municipality Lookup");
+
+        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish(); // Go back to the previous screen
+            }
+        });
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
@@ -36,10 +46,10 @@ public class TabActivity extends AppCompatActivity {
                 (tab, position) -> {
                     switch (position) {
                         case 0:
-                            tab.setText("Perustiedot");
+                            tab.setText("Basic Info");
                             break;
                         case 1:
-                            tab.setText("Vertaa");
+                            tab.setText("Compare");
                             break;
                         case 2:
                             tab.setText("Quiz");

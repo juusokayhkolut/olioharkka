@@ -321,8 +321,13 @@ public class CityCodeLookup {
     }
 
     public static String getCityCode(String city) {
-        // Return the city code or a default message if the city is not found, handling case insensitivity
-        return "KU" + cityCodes.getOrDefault(city.toLowerCase(), "City not found");
+        String cityCode = cityCodes.getOrDefault(city.toLowerCase(), "City not found");
+
+        if (cityCode == "City not found") {
+            return "City not found";
+        } else {
+            return "KU" + cityCode;
+        }
     }
 
     public static void main(String[] args) {

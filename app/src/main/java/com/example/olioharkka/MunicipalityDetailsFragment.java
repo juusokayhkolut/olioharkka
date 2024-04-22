@@ -101,8 +101,9 @@ public class MunicipalityDetailsFragment extends Fragment {
         Map<String, Object> weather = getWeather(municipality);
 
         if (municipalityPopulation != null) {
-            populationView.setText("Population: " + municipalityPopulation.toString() + " (2022: " + (populationChange>0?"+":"") + (int) Math.round(populationChange) + ")");
+            populationView.setText("Population: " + municipalityPopulation.toString() + "(" +(populationChange>0?" +":" ") + (int) Math.round(populationChange) + " this year) (2022)");
             dataManager.setData("population", municipalityPopulation.toString());
+            dataManager.setData("populationChange", populationChange.toString());
         }
 
         SpannableString spannableString = new SpannableString("Wikipedia: https://fi.wikipedia.org/wiki/" + municipality);
