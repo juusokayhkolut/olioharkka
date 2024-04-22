@@ -1,10 +1,21 @@
 package com.example.olioharkka;
 
-import static com.example.olioharkka.ApiClient.getPoliticalSpread;
+import static com.example.olioharkka.ApiClient.getAmountOfSummerCottages;
+import static com.example.olioharkka.ApiClient.getEmploymentRate;
+import static com.example.olioharkka.ApiClient.getPopulationChange;
 import static com.example.olioharkka.ApiClient.getWeather;
+import static com.example.olioharkka.ApiClient.getWorkSelfSufficiency;
 import static com.example.olioharkka.ApiClient.searchForMunicipalityPopulation;
 
+import android.annotation.SuppressLint;
+import android.content.Intent;
+import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.UnderlineSpan;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -29,141 +40,108 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-public class MunicipalityDetailsFragment extends Fragment implements OnMapReadyCallback {
-
-    private MapView mMapView;
-    private GoogleMap mMap;
+public class MunicipalityDetailsFragment extends Fragment {
 
     private TextView municipalityNameView;
     private TextView populationView;
     private TextView wikipediaLinkView;
-    private TextView politicalDivisionView;
     private TextView weatherView;
-    private TextView incomeLevelView;
-    private Button mapButton;
+    private TextView workSelfSufficiencyView;
+    private TextView employmentRateView;
+    private TextView summerCottagesView;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View rootView =  inflater.inflate(R.layout.municipality_details_fragment, container, false);
 
-        mMapView = rootView.findViewById(R.id.map_view);
-        mMapView.onCreate(savedInstanceState);
-        mMapView.getMapAsync(this);
-
         return rootView;
     }
 
-    @Override
-    public void onMapReady(GoogleMap googleMap) {
-        mMap = googleMap;
-        System.out.println("________GOOGLE MAPS INIT______________");
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        mMapView.onResume();
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        mMapView.onPause();
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        mMapView.onDestroy();
-    }
-
-    @Override
-    public void onLowMemory() {
-        super.onLowMemory();
-        mMapView.onLowMemory();
-    }
-
+    @SuppressLint("SetTextI18n")
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // get data
+        // Get municipality data
         DataManager dataManager = DataManager.getInstance();
         String municipality = dataManager.getData("municipality");
 
         municipalityNameView = view.findViewById(R.id.municipalityName);
-        populationView = view.findViewById(R.id.population);
-        wikipediaLinkView = view.findViewById(R.id.wikipediaLink);
-        politicalDivisionView = view.findViewById(R.id.politicalDivision);
-        weatherView = view.findViewById(R.id.weather);
-        incomeLevelView = view.findViewById(R.id.incomeLevel);
-
         municipalityNameView.setText(municipality);
-        populationView.setText("Asukasmäärä: Placeholder");
-        wikipediaLinkView.setText("Wikipedia-linkki: Placeholder");
-        politicalDivisionView.setText("Poliittinen jakauma: Placeholder");
-        weatherView.setText("Sää: Placeholder");
-        incomeLevelView.setText("Tulotaso: Placeholder");
 
-        // population
+        populationView = view.findViewById(R.id.population);
+        populationView.setText("Population: Placeholder");
+
+        wikipediaLinkView = view.findViewById(R.id.wikipediaLink);
+        wikipediaLinkView.setText("Wikipedia: Placeholder");
+
+        weatherView = view.findViewById(R.id.weather);
+        weatherView.setText("Weather: Placeholder");
+
+        workSelfSufficiencyView = view.findViewById(R.id.workSelfSufficiency);
+        workSelfSufficiencyView.setText("Work Self Sufficiency: Placeholder");
+
+        employmentRateView = view.findViewById(R.id.employmentRate);
+        employmentRateView.setText("Employment Rate: Placeholder");
+
+        summerCottagesView = view.findViewById(R.id.amountOfSummerCottages);
+        summerCottagesView.setText("Summer Cottages: Placeholder");
+
+        // get data
         Integer municipalityPopulation = searchForMunicipalityPopulation(municipality);
+        Double populationChange = getPopulationChange(municipality);
+        Double workSelfSufficiency = getWorkSelfSufficiency(municipality);
+        Double employmentRate = getEmploymentRate(municipality);
+        Double summerCottages = getAmountOfSummerCottages(municipality);
+        Map<String, Object> weather = getWeather(municipality);
+
         if (municipalityPopulation != null) {
-            populationView.setText("Asukasmäärä: " + municipalityPopulation.toString());
+            populationView.setText("Population: " + municipalityPopulation.toString() + " (2022: " + (populationChange>0?"+":"") + (int) Math.round(populationChange) + ")");
             dataManager.setData("population", municipalityPopulation.toString());
         }
 
-        // wikipedia
-        wikipediaLinkView.setText("Wikipedia-linkki: https://fi.wikipedia.org/wiki/" + municipality);
-        dataManager.setData("wikipedia_link", "https://fi.wikipedia.org/wiki/" + municipality);
+        SpannableString spannableString = new SpannableString("Wikipedia: https://fi.wikipedia.org/wiki/" + municipality);
+        spannableString.setSpan(new UnderlineSpan(), 11, spannableString.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        spannableString.setSpan(new ForegroundColorSpan(Color.BLUE), 11, spannableString.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        wikipediaLinkView.setText(spannableString);
+        wikipediaLinkView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String url = "https://fi.wikipedia.org/wiki/" + municipality;
 
-        // map -- ei toimi emulaattorissa
-        searchAndShowCity(municipality);
-
-        // political spread
-        //System.out.println("_ASDJHAJSHDKAHSKJDHKJASDHJKAS____");
-        //System.out.println(getPoliticalSpread(municipality));
-
-        // weather
-        Map<String, Object> weatherMap = getWeather(municipality);
-        weatherView.setText("Temperature (C): "+ BigDecimal.valueOf((Double) weatherMap.get("temp") - 273.1).round(new MathContext(2, RoundingMode.HALF_UP))+"\n" +
-                            "Wind Speed (m/s): " + weatherMap.get("wind_speed")+"\n" +
-                            "Humidity: " + weatherMap.get("HUMIDITY")+"");
-        dataManager.setData("weather", "Temperature (C): "+ BigDecimal.valueOf((Double) weatherMap.get("temp") - 273.1).round(new MathContext(2, RoundingMode.HALF_UP))+"\n" +
-                "Wind Speed (m/s): " + weatherMap.get("wind_speed")+"\n" +
-                "Humidity: " + weatherMap.get("HUMIDITY")+"");
-    }
-
-    private void searchAndShowCity(String cityName) {
-        GeoApiContext context = new GeoApiContext.Builder().apiKey(getString(R.string.google_maps_key)).build();
-        GeocodingResult[] results;
-        try {
-            results = GeocodingApi.geocode(context, cityName).await();
-            System.out.println("________MAPS DETILAS______");
-            System.out.println(results);
-            if (results != null && results.length > 0) {
-                GeocodingResult result = results[0];
-                com.google.maps.model.LatLng location = result.geometry.location;
-                LatLngBounds bounds = new LatLngBounds(
-                        new LatLng(result.geometry.bounds.southwest.lat, result.geometry.bounds.southwest.lng),
-                        new LatLng(result.geometry.bounds.northeast.lat, result.geometry.bounds.northeast.lng)
-                );
-                LatLng latLng = new LatLng(location.lat, location.lng);
-
-                if (mMap != null) {
-                    mMap.clear();
-                    mMap.addMarker(new MarkerOptions().position(latLng).title(result.formattedAddress));
-                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 10));
-                } else {
-                    // Log a message or handle the case where mMap is null
-                    System.out.println("_______ Error loading city on map ___________");
-                }
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setData(Uri.parse(url));
+                startActivity(intent);
             }
-        } catch (IOException | InterruptedException | com.google.maps.errors.ApiException e) {
-            e.printStackTrace();
+        });
+        dataManager.setData("wikipediaLink", "https://fi.wikipedia.org/wiki/" + municipality);
+
+        if (workSelfSufficiency != null) {
+            workSelfSufficiencyView.setText("Work Self Sufficiency: " + workSelfSufficiency.toString() + "% (2022)");
+            dataManager.setData("workSelfSufficiency", workSelfSufficiency.toString());
+        }
+
+        if (employmentRate != null) {
+            employmentRateView.setText("Employment Rate: " + employmentRate.toString() + "% (2022)");
+            dataManager.setData("employmentRate", employmentRate.toString());
+        }
+
+        if (summerCottages != null) {
+            summerCottagesView.setText("Summer Cottages: " + (int) Math.round(summerCottages) + " (2022)");
+            dataManager.setData("summerCottages", employmentRate.toString());
+        }
+
+        if (weather != null) {
+            weatherView.setText("Current weather:" +
+                                "Temperature (C): "+ BigDecimal.valueOf((Double) weather.get("temp") - 273.1).round(new MathContext(2, RoundingMode.HALF_UP))+"\n" +
+                                "Wind Speed (m/s): " + weather.get("wind_speed"));
+            dataManager.setData("weatherTemperature", (BigDecimal.valueOf((Double) weather.get("temp") - 273.1).round(new MathContext(2, RoundingMode.HALF_UP)).toString()));
+            dataManager.setData("weatherWindSpeed", weather.get("wind_speed").toString());
         }
     }
 

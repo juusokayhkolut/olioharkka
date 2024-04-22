@@ -26,13 +26,8 @@
             android:id="@+id/wikipediaLink"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"/>
-
-        <TextView
-            android:id="@+id/politicalDivision"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"/>
+            android:layout_marginTop="8dp"
+            android:clickable="true"/>
 
         <TextView
             android:id="@+id/weather"
@@ -41,15 +36,21 @@
             android:layout_marginTop="8dp"/>
 
         <TextView
-            android:id="@+id/incomeLevel"
+            android:id="@+id/workSelfSufficiency"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"/>
 
-        <com.google.android.gms.maps.MapView
-            android:id="@+id/map_view"
+        <TextView
+            android:id="@+id/employmentRate"
             android:layout_width="match_parent"
-            android:layout_height="500dp"
-            android:layout_weight="1" />
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"/>
+
+        <TextView
+            android:id="@+id/amountOfSummerCottages"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"/>
     </LinearLayout>
 </ScrollView>

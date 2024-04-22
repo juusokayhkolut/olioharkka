@@ -23,6 +23,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
@@ -161,7 +162,7 @@ public class ApiClient {
         return null;
     }
 
-    public static Map<String, Object> getPoliticalSpread(String municipality) {
+    public static Double getPopulationChange(String municipality) {
         // returns ["KOK": 100, "SDP": 100] etc
         // ei toimi
         BufferedReader reader = null;
@@ -169,9 +170,9 @@ public class ApiClient {
         StrictMode.ThreadPolicy gfgPolicy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         StrictMode.setThreadPolicy(gfgPolicy);
 
-        Map<String, Object> politicalSpread = null;
+        Double populationChange = 0.0;
         try {
-            URI uri = new URI("https://pxdata.stat.fi:443/PxWeb/api/v1/en/StatFin/kvaa/statfin_kvaa_pxt_12xf.px");
+            URI uri = new URI("https://pxdata.stat.fi:443/PxWeb/api/v1/fi/StatFin/synt/statfin_synt_pxt_12dy.px");
             URL url = uri.toURL();
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("POST");
@@ -181,20 +182,11 @@ public class ApiClient {
             String jsonInputString =    "{\n" +
                                         "    \"query\": [\n" +
                                         "        {\n" +
-                                        "            \"code\": \"Vaalipiiri ja kunta\",\n" +
+                                        "            \"code\": \"Alue\",\n" +
                                         "            \"selection\": {\n" +
                                         "                \"filter\": \"item\",\n" +
                                         "                \"values\": [\n" +
-                                        "                    \"021543\"\n" +
-                                        "                ]\n" +
-                                        "            }\n" +
-                                        "        },\n" +
-                                        "        {\n" +
-                                        "            \"code\": \"Ehdokkaan sukupuoli\",\n" +
-                                        "            \"selection\": {\n" +
-                                        "                \"filter\": \"item\",\n" +
-                                        "                \"values\": [\n" +
-                                        "                    \"SSS\"\n" +
+                                        "                    \""+CityCodeLookup.getCityCode(municipality)+"\"\n" +
                                         "                ]\n" +
                                         "            }\n" +
                                         "        },\n" +
@@ -203,10 +195,19 @@ public class ApiClient {
                                         "            \"selection\": {\n" +
                                         "                \"filter\": \"item\",\n" +
                                         "                \"values\": [\n" +
-                                        "                    \"osuus_ehd\"\n" +
+                                        "                    \"vm01\"\n" +
                                         "                ]\n" +
                                         "            }\n" +
-                                        "        }\n" +
+                                        "        },\n" +
+                                        "        {\n" +
+                                        "            \"code\": \"Vuosi\",\n" +
+                                        "            \"selection\": {\n" +
+                                        "                \"filter\": \"item\",\n" +
+                                        "                \"values\": [\n" +
+                                        "                    \"2022\"\n" +
+                                        "                ]\n" +
+                                        "            }\n" +
+                                        "        },\n" +
                                         "    ],\n" +
                                         "    \"response\": {\n" +
                                         "        \"format\": \"json-stat2\"\n" +
@@ -236,78 +237,336 @@ public class ApiClient {
             ResponseData responseData = gson.fromJson(buffer.toString(), ResponseData.class);
             Map<String, Object> dimensionMap = responseData.getDimension();
 
-            // puolueNamesAndCodes -- "201": "SDP"
-            Map<String, Object> object1 = (Map<String, Object>) dimensionMap.get("Puolue");
+            // Labels
+            Map<String, Object> object1 = (Map<String, Object>) dimensionMap.get("Vuosi");
             Map<String, Object> object2 = (Map<String, Object>) object1.get("category");
-            Map<String, Object> puolueNamesAndCodes = (Map<String, Object>) object2.get("label");
+            Map<String, Object> labels = (Map<String, Object>) object2.get("label");
 
-            System.out.println("puolueNamesAndCodes");
-            System.out.println(puolueNamesAndCodes);
-
-            // puoluePlacement -- "203": 1
-            Map<String, Object> object12 = (Map<String, Object>) dimensionMap.get("Puolue");
+            // Index
+            Map<String, Object> object12 = (Map<String, Object>) dimensionMap.get("Vuosi");
             Map<String, Object> object22 = (Map<String, Object>) object12.get("category");
-            Map<String, Integer> puoluePlacement = (Map<String, Integer>) object22.get("index");
+            Map<String, Integer> index = (Map<String, Integer>) object22.get("index");
 
-            System.out.println("puoluePlacement");
-            System.out.println(puoluePlacement);
-
-            // puoluePlacement -- "203": 1
+            // Values
             JSONObject jsonObject = new JSONObject(buffer.toString());
-            List<Double> puolueValues = new ArrayList<Double>();
+            List<Double> values = new ArrayList<Double>();
 
             for (String value: jsonObject.get("value").toString().replace("[", "").replace("]", "").split(",")) {
-                puolueValues.add(Double.parseDouble(value));
+                values.add(Double.parseDouble(value));
             }
 
-            System.out.println("puolueValues");
-            System.out.println(puolueValues);
+            Map<String, Object> populationChanges = new HashMap<>();
 
-            Map<String, Object> puolueAndPercent = null;
-
-            // make list
-            for (int i = 0; i < puolueNamesAndCodes.size(); i++) {
-                System.out.println(puoluePlacement.containsKey(1));
-                System.out.println(puoluePlacement.containsKey("1"));
-                System.out.println(puoluePlacement.containsKey("1.0"));
-                System.out.println(puoluePlacement.containsKey(1.0));
-                System.out.println(puoluePlacement.containsKey(100));
-                System.out.println(puoluePlacement.values());
-                System.out.println(puoluePlacement.keySet());
-                System.out.println(puoluePlacement.get("100"));
-
-                Collection puoluePlacementValues = puoluePlacement.values();
-                for (int j = 0; j < puoluePlacementValues.size(); j++) {
-                    if (puoluePlacementValues.toArray()[i] == String.valueOf(i)) {
-                        System.out.println("code");
-                        System.out.println(puoluePlacementValues.toArray()[i]);
-                        System.out.println(puolueNamesAndCodes.get(puoluePlacementValues.toArray()[i]).toString());
-                        String puolueName = puolueNamesAndCodes.get(puoluePlacementValues.toArray()[i]).toString();
-                    }
-                }
-
-                Optional<String> puolueCode = getKeyByValue(puoluePlacement, i);
-                System.out.println("puolueCode");
-                System.out.println(puolueCode);
-                String puolueName = puolueNamesAndCodes.get(puolueCode).toString();
-                System.out.println("puolueName");
-                System.out.println(puolueName);
-
-                puolueAndPercent.put(puolueName, puolueNamesAndCodes);
-                System.out.println("puolueAndPercent");
-                System.out.println(puolueAndPercent);
+            for (int i = 0; i < values.size(); i++) {
+                populationChanges.put(labels.get(index.keySet().toArray()[i].toString()).toString(), values.get(i));
             }
 
-            politicalSpread = puolueAndPercent;
-            System.out.println("politicalSpread");
-            System.out.println(politicalSpread);
+            populationChange = Double.parseDouble(populationChanges.get("2022").toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println(e);
+        }
+        return populationChange;
+    }
 
+    public static Double getWorkSelfSufficiency(String municipality) {
+        BufferedReader reader = null;
+
+        StrictMode.ThreadPolicy gfgPolicy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        StrictMode.setThreadPolicy(gfgPolicy);
+
+        Double workSelfSufficiency = 0.0;
+        try {
+            URI uri = new URI("https://pxdata.stat.fi:443/PxWeb/api/v1/fi/StatFin/tyokay/statfin_tyokay_pxt_125s.px");
+            URL url = uri.toURL();
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Content-Type", "application/json; utf-8");
+            connection.setDoOutput(true);
+
+            String jsonInputString =    "{\n" +
+                    "    \"query\": [\n" +
+                    "        {\n" +
+                    "            \"code\": \"Alue\",\n" +
+                    "            \"selection\": {\n" +
+                    "                \"filter\": \"item\",\n" +
+                    "                \"values\": [\n" +
+                    "                    \""+CityCodeLookup.getCityCode(municipality)+"\"\n" +
+                    "                ]\n" +
+                    "            }\n" +
+                    "        },\n" +
+                    "        {\n" +
+                    "            \"code\": \"Vuosi\",\n" +
+                    "            \"selection\": {\n" +
+                    "                \"filter\": \"item\",\n" +
+                    "                \"values\": [\n" +
+                    "                    \"2022\"\n" +
+                    "                ]\n" +
+                    "            }\n" +
+                    "        },\n" +
+                    "    ],\n" +
+                    "    \"response\": {\n" +
+                    "        \"format\": \"json-stat2\"\n" +
+                    "    }\n" +
+                    "}";
+
+
+            try (OutputStream os = connection.getOutputStream()) {
+                byte[] input = jsonInputString.getBytes("utf-8");
+                os.write(input, 0, input.length);
+            }
+
+            connection.connect();
+            InputStream stream = connection.getInputStream();
+
+            reader = new BufferedReader(new InputStreamReader(stream));
+
+            StringBuffer buffer = new StringBuffer();
+            String line = "";
+
+            while ((line = reader.readLine()) != null) {
+                buffer.append(line+"\n");
+                Log.d("Response: ", "> " + line);   //here u ll get whole response...... :-)
+            }
+
+            Gson gson = new Gson();
+            ResponseData responseData = gson.fromJson(buffer.toString(), ResponseData.class);
+            Map<String, Object> dimensionMap = responseData.getDimension();
+
+            // Labels
+            Map<String, Object> object1 = (Map<String, Object>) dimensionMap.get("Vuosi");
+            Map<String, Object> object2 = (Map<String, Object>) object1.get("category");
+            Map<String, Object> labels = (Map<String, Object>) object2.get("label");
+
+            // Index
+            Map<String, Object> object12 = (Map<String, Object>) dimensionMap.get("Vuosi");
+            Map<String, Object> object22 = (Map<String, Object>) object12.get("category");
+            Map<String, Integer> index = (Map<String, Integer>) object22.get("index");
+
+            // Values
+            JSONObject jsonObject = new JSONObject(buffer.toString());
+            List<Double> values = new ArrayList<Double>();
+
+            for (String value: jsonObject.get("value").toString().replace("[", "").replace("]", "").split(",")) {
+                values.add(Double.parseDouble(value));
+            }
+
+            Map<String, Object> workSelfSufficiencies = new HashMap<>();
+
+            for (int i = 0; i < values.size(); i++) {
+                workSelfSufficiencies.put(labels.get(index.keySet().toArray()[i].toString()).toString(), values.get(i));
+            }
+
+            workSelfSufficiency = Double.parseDouble(workSelfSufficiencies.get("2022").toString());
         } catch (Exception e) {
             e.printStackTrace();
             //jsonResponse.put("error", "Error during request: " + e.getMessage());
             System.out.println(e);
         }
-        return politicalSpread;
+        return workSelfSufficiency;
+    }
+
+    public static Double getEmploymentRate(String municipality) {
+        BufferedReader reader = null;
+
+        StrictMode.ThreadPolicy gfgPolicy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        StrictMode.setThreadPolicy(gfgPolicy);
+
+        Double employmentRate = 0.0;
+        try {
+            URI uri = new URI("https://pxdata.stat.fi:443/PxWeb/api/v1/fi/StatFin/tyokay/statfin_tyokay_pxt_115x.px");
+            URL url = uri.toURL();
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Content-Type", "application/json; utf-8");
+            connection.setDoOutput(true);
+
+            String jsonInputString =    "{\n" +
+                    "    \"query\": [\n" +
+                    "        {\n" +
+                    "            \"code\": \"Alue\",\n" +
+                    "            \"selection\": {\n" +
+                    "                \"filter\": \"item\",\n" +
+                    "                \"values\": [\n" +
+                    "                    \""+CityCodeLookup.getCityCode(municipality)+"\"\n" +
+                    "                ]\n" +
+                    "            }\n" +
+                    "        },\n" +
+                    "        {\n" +
+                    "            \"code\": \"Vuosi\",\n" +
+                    "            \"selection\": {\n" +
+                    "                \"filter\": \"item\",\n" +
+                    "                \"values\": [\n" +
+                    "                    \"2022\"\n" +
+                    "                ]\n" +
+                    "            }\n" +
+                    "        },\n" +
+                    "        {\n" +
+                    "            \"code\": \"Tiedot\",\n" +
+                    "            \"selection\": {\n" +
+                    "                \"filter\": \"item\",\n" +
+                    "                \"values\": [\n" +
+                    "                    \"tyollisyysaste\"\n" +
+                    "                ]\n" +
+                    "            }\n" +
+                    "        }\n" +
+                    "    ],\n" +
+                    "    \"response\": {\n" +
+                    "        \"format\": \"json-stat2\"\n" +
+                    "    }\n" +
+                    "}";
+
+
+            try (OutputStream os = connection.getOutputStream()) {
+                byte[] input = jsonInputString.getBytes("utf-8");
+                os.write(input, 0, input.length);
+            }
+
+            connection.connect();
+            InputStream stream = connection.getInputStream();
+
+            reader = new BufferedReader(new InputStreamReader(stream));
+
+            StringBuffer buffer = new StringBuffer();
+            String line = "";
+
+            while ((line = reader.readLine()) != null) {
+                buffer.append(line+"\n");
+                Log.d("Response: ", "> " + line);   //here u ll get whole response...... :-)
+            }
+
+            Gson gson = new Gson();
+            ResponseData responseData = gson.fromJson(buffer.toString(), ResponseData.class);
+            Map<String, Object> dimensionMap = responseData.getDimension();
+
+            // Labels
+            Map<String, Object> object1 = (Map<String, Object>) dimensionMap.get("Vuosi");
+            Map<String, Object> object2 = (Map<String, Object>) object1.get("category");
+            Map<String, Object> labels = (Map<String, Object>) object2.get("label");
+
+            // Index
+            Map<String, Object> object12 = (Map<String, Object>) dimensionMap.get("Vuosi");
+            Map<String, Object> object22 = (Map<String, Object>) object12.get("category");
+            Map<String, Integer> index = (Map<String, Integer>) object22.get("index");
+
+            // Values
+            JSONObject jsonObject = new JSONObject(buffer.toString());
+            List<Double> values = new ArrayList<Double>();
+
+            for (String value: jsonObject.get("value").toString().replace("[", "").replace("]", "").split(",")) {
+                values.add(Double.parseDouble(value));
+            }
+
+            Map<String, Object> employmentRates = new HashMap<>();
+
+            for (int i = 0; i < values.size(); i++) {
+                employmentRates.put(labels.get(index.keySet().toArray()[i].toString()).toString(), values.get(i));
+            }
+
+            employmentRate = Double.parseDouble(employmentRates.get("2022").toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+            //jsonResponse.put("error", "Error during request: " + e.getMessage());
+            System.out.println(e);
+        }
+        return employmentRate;
+    }
+
+    public static Double getAmountOfSummerCottages(String municipality) {
+        BufferedReader reader = null;
+
+        StrictMode.ThreadPolicy gfgPolicy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        StrictMode.setThreadPolicy(gfgPolicy);
+
+        Double amountOfSummerCottages = 0.0;
+        try {
+            URI uri = new URI("https://pxdata.stat.fi:443/PxWeb/api/v1/fi/StatFin/rakke/statfin_rakke_pxt_116j.px");
+            URL url = uri.toURL();
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Content-Type", "application/json; utf-8");
+            connection.setDoOutput(true);
+
+            String jsonInputString =    "{\n" +
+                    "    \"query\": [\n" +
+                    "        {\n" +
+                    "            \"code\": \"Alue\",\n" +
+                    "            \"selection\": {\n" +
+                    "                \"filter\": \"item\",\n" +
+                    "                \"values\": [\n" +
+                    "                    \""+CityCodeLookup.getCityCode(municipality)+"\"\n" +
+                    "                ]\n" +
+                    "            }\n" +
+                    "        },\n" +
+                    "        {\n" +
+                    "            \"code\": \"Vuosi\",\n" +
+                    "            \"selection\": {\n" +
+                    "                \"filter\": \"item\",\n" +
+                    "                \"values\": [\n" +
+                    "                    \"2022\"\n" +
+                    "                ]\n" +
+                    "            }\n" +
+                    "        }\n" +
+                    "    ],\n" +
+                    "    \"response\": {\n" +
+                    "        \"format\": \"json-stat2\"\n" +
+                    "    }\n" +
+                    "}";
+
+
+            try (OutputStream os = connection.getOutputStream()) {
+                byte[] input = jsonInputString.getBytes("utf-8");
+                os.write(input, 0, input.length);
+            }
+
+            connection.connect();
+            InputStream stream = connection.getInputStream();
+
+            reader = new BufferedReader(new InputStreamReader(stream));
+
+            StringBuffer buffer = new StringBuffer();
+            String line = "";
+
+            while ((line = reader.readLine()) != null) {
+                buffer.append(line+"\n");
+                Log.d("Response: ", "> " + line);   //here u ll get whole response...... :-)
+            }
+
+            Gson gson = new Gson();
+            ResponseData responseData = gson.fromJson(buffer.toString(), ResponseData.class);
+            Map<String, Object> dimensionMap = responseData.getDimension();
+
+            // Labels
+            Map<String, Object> object1 = (Map<String, Object>) dimensionMap.get("Vuosi");
+            Map<String, Object> object2 = (Map<String, Object>) object1.get("category");
+            Map<String, Object> labels = (Map<String, Object>) object2.get("label");
+
+            // Index
+            Map<String, Object> object12 = (Map<String, Object>) dimensionMap.get("Vuosi");
+            Map<String, Object> object22 = (Map<String, Object>) object12.get("category");
+            Map<String, Integer> index = (Map<String, Integer>) object22.get("index");
+
+            // Values
+            JSONObject jsonObject = new JSONObject(buffer.toString());
+            List<Double> values = new ArrayList<Double>();
+
+            for (String value: jsonObject.get("value").toString().replace("[", "").replace("]", "").split(",")) {
+                values.add(Double.parseDouble(value));
+            }
+
+            Map<String, Object> amountOfSummerCottagesList = new HashMap<>();
+
+            for (int i = 0; i < values.size(); i++) {
+                amountOfSummerCottagesList.put(labels.get(index.keySet().toArray()[i].toString()).toString(), values.get(i));
+            }
+
+            amountOfSummerCottages = Double.parseDouble(amountOfSummerCottagesList.get("2022").toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+            //jsonResponse.put("error", "Error during request: " + e.getMessage());
+            System.out.println(e);
+        }
+        return amountOfSummerCottages;
     }
 
     public static Map<String, Object> getWeather(String municipality) {
@@ -339,7 +598,6 @@ public class ApiClient {
                     buffer.toString(), new TypeToken<HashMap<String, Object>>() {}.getType()
             );
 
-            System.out.println(retMap);
             weatherMap = (Map) retMap.get("current");
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
