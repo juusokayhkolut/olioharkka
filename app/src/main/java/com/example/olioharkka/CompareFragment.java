@@ -3,10 +3,10 @@ package com.example.olioharkka;
 import static androidx.core.content.ContextCompat.getSystemService;
 import static com.example.olioharkka.ApiClient.getAmountOfSummerCottages;
 import static com.example.olioharkka.ApiClient.getEmploymentRate;
+import static com.example.olioharkka.ApiClient.getMunicipalityPopulation;
 import static com.example.olioharkka.ApiClient.getPopulationChange;
 import static com.example.olioharkka.ApiClient.getWeather;
 import static com.example.olioharkka.ApiClient.getWorkSelfSufficiency;
-import static com.example.olioharkka.ApiClient.searchForMunicipalityPopulation;
 
 import android.content.Context;
 import android.content.Intent;
@@ -71,21 +71,21 @@ public class CompareFragment extends Fragment {
         DataManager dataManager = DataManager.getInstance();
 
         // Get data from storage
-        String municipality = dataManager.getData("municipality");
-        Double population = Double.parseDouble(dataManager.getData("population"));
-        Double populationChange = Double.parseDouble(dataManager.getData("populationChange"));
-        String wikipediaLink = dataManager.getData("wikipediaLink");
-        Double weatherTemperature = Double.parseDouble(dataManager.getData("weatherTemperature"));
-        Double weatherWindSpeed = Double.parseDouble(dataManager.getData("weatherWindSpeed"));
-        Double workSelfSufficiency = Double.parseDouble(dataManager.getData("workSelfSufficiency"));
-        Double employmentRate = Double.parseDouble(dataManager.getData("employmentRate"));
-        Double summerCottages = Double.parseDouble(dataManager.getData("summerCottages"));
+        Municipality municipality = new Municipality(dataManager.getData("municipality"),
+                Integer.parseInt(dataManager.getData("population")),
+                Double.parseDouble(dataManager.getData("populationChange")),
+                dataManager.getData("wikipediaLink"),
+                Double.parseDouble(dataManager.getData("workSelfSufficiency")),
+                Double.parseDouble(dataManager.getData("employmentRate")),
+                Double.parseDouble(dataManager.getData("summerCottages")),
+                new Weather(Double.parseDouble(dataManager.getData("weatherTemperature")), Double.parseDouble(dataManager.getData("weatherWindSpeed")))
+                );
 
         originalMunicipalityNameView = view.findViewById(R.id.originalMunicipalityName);
-        originalMunicipalityNameView.setText(municipality);
+        originalMunicipalityNameView.setText(municipality.getName());
 
         originalPopulationView = view.findViewById(R.id.originalPopulation);
-        originalPopulationView.setText("Population: " + population + "(" +(populationChange>0?" +":" ") + (int) Math.round(populationChange) + " this year) (2022)");
+        originalPopulationView.setText("Population: " + municipality.getPopulation() + "(" +(municipality.getPopulationChange()>0?" +":" ") + (int) Math.round(municipality.getPopulationChange()) + " this year) (2022)");
 
         originalWikipediaLinkView = view.findViewById(R.id.originalWikipediaLink);
         SpannableString spannableString = new SpannableString("Wikipedia: https://fi.wikipedia.org/wiki/" + municipality);
@@ -102,21 +102,21 @@ public class CompareFragment extends Fragment {
                 startActivity(intent);
             }
         });
-        originalWikipediaLinkView.setText("Wikipedia: " + wikipediaLink);
+        originalWikipediaLinkView.setText("Wikipedia: " + municipality.getWikipediaLink());
 
         originalWeatherView = view.findViewById(R.id.originalWeather);
         originalWeatherView.setText("Current weather:\n" +
-                                    "Temperature (C): "+ BigDecimal.valueOf(weatherTemperature)+"\n" +
-                                    "Wind Speed (m/s): " + weatherWindSpeed);
+                                    "Temperature (C): "+ BigDecimal.valueOf(municipality.getWeather().getTemperature())+"\n" +
+                                    "Wind Speed (m/s): " + municipality.getWeather().getWindSpeed());
 
         originalWorkSelfSufficiencyView = view.findViewById(R.id.originalWorkSelfSufficiency);
-        originalWorkSelfSufficiencyView.setText("Work Self Sufficiency: " + workSelfSufficiency);
+        originalWorkSelfSufficiencyView.setText("Work Self Sufficiency: " + municipality.getWorkSelfSufficiency());
 
         originalEmploymentRateView = view.findViewById(R.id.originalEmploymentRate);
-        originalEmploymentRateView.setText("Employment Rate: " + employmentRate);
+        originalEmploymentRateView.setText("Employment Rate: " + municipality.getEmploymentRate());
 
         originalSummerCottagesView = view.findViewById(R.id.originalAmountOfSummerCottages);
-        originalSummerCottagesView.setText("Summer Cottages: " + summerCottages);
+        originalSummerCottagesView.setText("Summer Cottages: " + municipality.getSummerCottages());
 
         // Compared municipality
         comparedMunicipalityNameView = view.findViewById(R.id.comparedMunicipalityName);
@@ -141,37 +141,43 @@ public class CompareFragment extends Fragment {
         comparedSummerCottagesView.setText(" ");
 
         searchField = view.findViewById(R.id.searchField);
-        ProgressBar loadingIndicator = view.findViewById(R.id.loadingIndicator);
 
         // Search button
         Button compareButton = view.findViewById(R.id.compareMunicipalitiesButton);
         compareButton.setOnClickListener(v -> {
             if (searchField.getText().toString() != "") {
-                loadingIndicator.setVisibility(View.VISIBLE);
-
                 dismissKeyboard();
 
-                String comparedMunicipality = searchField.getText().toString();
+                String comparedMunicipalityName = searchField.getText().toString();
 
-                // get data
-                Integer comparedMunicipalityPopulation = searchForMunicipalityPopulation(comparedMunicipality);
-                Double comparedPopulationChange = getPopulationChange(comparedMunicipality);
-                Double comparedWorkSelfSufficiency = getWorkSelfSufficiency(comparedMunicipality);
-                Double comparedEmploymentRate = getEmploymentRate(comparedMunicipality);
-                Double comparedSummerCottages = getAmountOfSummerCottages(comparedMunicipality);
-                Map<String, Object> comparedWeather = getWeather(comparedMunicipality);
+                Map<String, Object> comparedWeather = getWeather(comparedMunicipalityName);
+                Weather comparedMunicipalityWeather = new Weather(
+                        (Double) comparedWeather.get("temp"),
+                        (Double) comparedWeather.get("wind_speed")
+                );
 
-                comparedMunicipalityNameView.setText(comparedMunicipality);
-                comparedPopulationView.setText("Population: " + comparedMunicipalityPopulation + " (" +(comparedPopulationChange>0?" +":" ") + (int) Math.round(comparedPopulationChange) + " this year) (2022)");
+                Municipality comparedMunicipality = new Municipality(
+                        comparedMunicipalityName,
+                        getMunicipalityPopulation(comparedMunicipalityName),
+                        getPopulationChange(comparedMunicipalityName),
+                        "https://fi.wikipedia.org/wiki/" + comparedMunicipalityName,
+                        getWorkSelfSufficiency(comparedMunicipalityName),
+                        getEmploymentRate(comparedMunicipalityName),
+                        getAmountOfSummerCottages(comparedMunicipalityName),
+                        comparedMunicipalityWeather
+                );
 
-                SpannableString comparedSpannableString = new SpannableString("Wikipedia: https://fi.wikipedia.org/wiki/" + comparedMunicipality);
+                comparedMunicipalityNameView.setText(comparedMunicipality.getName());
+                comparedPopulationView.setText("Population: " + comparedMunicipality.getPopulation() + " (" +(comparedMunicipality.getPopulationChange()>0?"+":"") + (int) Math.round(comparedMunicipality.getPopulationChange()) + ") (2022)");
+
+                SpannableString comparedSpannableString = new SpannableString(comparedMunicipality.getWikipediaLink());
                 comparedSpannableString.setSpan(new UnderlineSpan(), 11, comparedSpannableString.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                 comparedSpannableString.setSpan(new ForegroundColorSpan(Color.BLUE), 11, comparedSpannableString.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                 comparedWikipediaLinkView.setText(comparedSpannableString);
                 comparedWikipediaLinkView.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        String url = "https://fi.wikipedia.org/wiki/" + comparedMunicipality;
+                        String url = comparedMunicipality.getWikipediaLink();
 
                         Intent intent = new Intent(Intent.ACTION_VIEW);
                         intent.setData(Uri.parse(url));
@@ -181,16 +187,12 @@ public class CompareFragment extends Fragment {
                 comparedWikipediaLinkView.setText(comparedSpannableString);
 
                 comparedWeatherView.setText("Current weather:\n" +
-                        "Temperature (C): "+ BigDecimal.valueOf((Double) comparedWeather.get("temp") - 273.1).round(new MathContext(2, RoundingMode.HALF_UP))+"\n" +
-                        "Wind Speed (m/s): " + comparedWeather.get("wind_speed"));
-                dataManager.setData("weatherTemperature", (BigDecimal.valueOf((Double) comparedWeather.get("temp") - 273.1).round(new MathContext(2, RoundingMode.HALF_UP)).toString()));
-                dataManager.setData("weatherWindSpeed", comparedWeather.get("wind_speed").toString());
+                        "Temperature (C): "+ BigDecimal.valueOf((Double) comparedMunicipality.getWeather().getTemperature() - 273.1).round(new MathContext(2, RoundingMode.HALF_UP))+"\n" +
+                        "Wind Speed (m/s): " + comparedMunicipality.getWeather().getWindSpeed());
 
-                comparedWorkSelfSufficiencyView.setText("Work Self Sufficiency: " + comparedWorkSelfSufficiency + "% (2022)");
-                comparedEmploymentRateView.setText("Employment Rate: " + comparedEmploymentRate + "% (2022)");
-                comparedSummerCottagesView.setText("Summer Cottages: " + comparedSummerCottages + " (2022)");
-
-                loadingIndicator.setVisibility(View.GONE);
+                comparedWorkSelfSufficiencyView.setText("Work Self Sufficiency: " + comparedMunicipality.getWorkSelfSufficiency() + "% (2022)");
+                comparedEmploymentRateView.setText("Employment Rate: " + comparedMunicipality.getEmploymentRate() + "% (2022)");
+                comparedSummerCottagesView.setText("Summer Cottages: " + comparedMunicipality.getSummerCottages() + " (2022)");
             }
         });
     }

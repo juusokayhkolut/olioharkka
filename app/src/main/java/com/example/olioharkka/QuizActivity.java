@@ -1,7 +1,7 @@
 package com.example.olioharkka;
 
+import static com.example.olioharkka.ApiClient.getMunicipalityPopulation;
 import static com.example.olioharkka.ApiClient.getWeather;
-import static com.example.olioharkka.ApiClient.searchForMunicipalityPopulation;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -95,7 +95,7 @@ public class QuizActivity extends AppCompatActivity {
         // Modifies anwers options & correct answers based on chosen municipality
         DataManager dataManager = DataManager.getInstance();
         String municipality = dataManager.getData("municipality");
-        Integer municipalityPopulation = searchForMunicipalityPopulation(municipality);
+        Integer municipalityPopulation = getMunicipalityPopulation(municipality);
         municipalityPopulation = Math.round(municipalityPopulation / 10000) * 10000;
 
         Random random = new Random();

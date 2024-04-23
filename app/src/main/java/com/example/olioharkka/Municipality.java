@@ -6,18 +6,20 @@ public class Municipality {
     private String name;
     private Integer population;
     private Double populationChange;
+    private String wikipediaLink;
     private Double workSelfSufficiency;
     private Double employmentRate;
     private Double summerCottages;
-    private Map<String, Object> weather;
+    private Weather weather;
 
     // Constructor
-    public Municipality(String name, Integer population, Double populationChange,
+    public Municipality(String name, Integer population, Double populationChange, String wikipediaLink,
                         Double workSelfSufficiency, Double employmentRate,
-                        Double summerCottages, Map<String, Object> weather) {
+                        Double summerCottages, Weather weather) {
         this.name = name;
         this.population = population;
         this.populationChange = populationChange;
+        this.wikipediaLink = wikipediaLink;
         this.workSelfSufficiency = workSelfSufficiency;
         this.employmentRate = employmentRate;
         this.summerCottages = summerCottages;
@@ -48,6 +50,14 @@ public class Municipality {
         this.populationChange = populationChange;
     }
 
+    public String getWikipediaLink() {
+        return wikipediaLink;
+    }
+
+    public void setPopulationChange(String wikipediaLink) {
+        this.wikipediaLink = wikipediaLink;
+    }
+
     public Double getWorkSelfSufficiency() {
         return workSelfSufficiency;
     }
@@ -72,11 +82,11 @@ public class Municipality {
         this.summerCottages = summerCottages;
     }
 
-    public Map<String, Object> getWeather() {
+    public Weather getWeather() {
         return weather;
     }
 
-    public void setWeather(Map<String, Object> weather) {
+    public void setWeather(Weather weather) {
         this.weather = weather;
     }
 }

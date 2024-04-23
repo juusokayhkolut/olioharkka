@@ -64,7 +64,7 @@ public class ApiClient {
         return Optional.empty();
     }
 
-    public static Integer searchForMunicipalityPopulation(String municipality) {
+    public static Integer getMunicipalityPopulation(String municipality) {
         Integer population = 0;
 
         HttpURLConnection connection = null;

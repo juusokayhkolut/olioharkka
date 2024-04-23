@@ -2,10 +2,10 @@ package com.example.olioharkka;
 
 import static com.example.olioharkka.ApiClient.getAmountOfSummerCottages;
 import static com.example.olioharkka.ApiClient.getEmploymentRate;
+import static com.example.olioharkka.ApiClient.getMunicipalityPopulation;
 import static com.example.olioharkka.ApiClient.getPopulationChange;
 import static com.example.olioharkka.ApiClient.getWeather;
 import static com.example.olioharkka.ApiClient.getWorkSelfSufficiency;
-import static com.example.olioharkka.ApiClient.searchForMunicipalityPopulation;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
@@ -17,32 +17,17 @@ import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.UnderlineSpan;
 import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.MapView;
-import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.maps.GeoApiContext;
-import com.google.maps.GeocodingApi;
-import com.google.maps.model.GeocodingResult;
-import java.io.IOException;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
-import java.util.ArrayList;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 public class MunicipalityDetailsFragment extends Fragment {
 
@@ -58,7 +43,6 @@ public class MunicipalityDetailsFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View rootView =  inflater.inflate(R.layout.municipality_details_fragment, container, false);
-
         return rootView;
     }
 
@@ -69,10 +53,10 @@ public class MunicipalityDetailsFragment extends Fragment {
 
         // Get municipality data
         DataManager dataManager = DataManager.getInstance();
-        String municipality = dataManager.getData("municipality");
+        String municipalityName = dataManager.getData("municipality");
 
         municipalityNameView = view.findViewById(R.id.municipalityName);
-        municipalityNameView.setText(municipality);
+        municipalityNameView.setText(municipalityName);
 
         populationView = view.findViewById(R.id.population);
         populationView.setText("Population: Placeholder");
@@ -92,18 +76,15 @@ public class MunicipalityDetailsFragment extends Fragment {
         summerCottagesView = view.findViewById(R.id.amountOfSummerCottages);
         summerCottagesView.setText("Summer Cottages: Placeholder");
 
-        // get data
-        Integer municipalityPopulation = searchForMunicipalityPopulation(municipality);
-        Double populationChange = getPopulationChange(municipality);
-        Double workSelfSufficiency = getWorkSelfSufficiency(municipality);
-        Double employmentRate = getEmploymentRate(municipality);
-        Double summerCottages = getAmountOfSummerCottages(municipality);
-        Map<String, Object> weather = getWeather(municipality);
+        Map<String, Object> municipalityWeatherMap = getWeather(municipalityName);
+        Weather municipalityWeather = new Weather(Double.parseDouble(municipalityWeatherMap.get("temp").toString()), Double.parseDouble(municipalityWeatherMap.get("wind_speed").toString()));
 
-        if (municipalityPopulation != null) {
-            populationView.setText("Population: " + municipalityPopulation.toString() + "(" +(populationChange>0?" +":" ") + (int) Math.round(populationChange) + " this year) (2022)");
-            dataManager.setData("population", municipalityPopulation.toString());
-            dataManager.setData("populationChange", populationChange.toString());
+        Municipality municipality = new Municipality(municipalityName, getMunicipalityPopulation(municipalityName), getPopulationChange(municipalityName), "Wikipedia: https://fi.wikipedia.org/wiki/" + municipalityName, getWorkSelfSufficiency(municipalityName), getEmploymentRate(municipalityName), getAmountOfSummerCottages(municipalityName), municipalityWeather);
+
+        if (municipality.getPopulation() != null) {
+            populationView.setText("Population: " + municipality.getPopulation().toString() + " (" +(municipality.getPopulationChange()>0?"+":"") + (int) Math.round(municipality.getPopulationChange()) + ") (2022)");
+            dataManager.setData("population", municipality.getPopulation().toString());
+            dataManager.setData("populationChange", municipality.getPopulationChange().toString());
         }
 
         SpannableString spannableString = new SpannableString("Wikipedia: https://fi.wikipedia.org/wiki/" + municipality);
@@ -122,27 +103,27 @@ public class MunicipalityDetailsFragment extends Fragment {
         });
         dataManager.setData("wikipediaLink", "https://fi.wikipedia.org/wiki/" + municipality);
 
-        if (workSelfSufficiency != null) {
-            workSelfSufficiencyView.setText("Work Self Sufficiency: " + workSelfSufficiency.toString() + "% (2022)");
-            dataManager.setData("workSelfSufficiency", workSelfSufficiency.toString());
+        if (municipality.getWorkSelfSufficiency() != null) {
+            workSelfSufficiencyView.setText("Work Self Sufficiency: " + municipality.getWorkSelfSufficiency().toString() + "% (2022)");
+            dataManager.setData("workSelfSufficiency", municipality.getWorkSelfSufficiency().toString());
         }
 
-        if (employmentRate != null) {
-            employmentRateView.setText("Employment Rate: " + employmentRate.toString() + "% (2022)");
-            dataManager.setData("employmentRate", employmentRate.toString());
+        if (municipality.getEmploymentRate() != null) {
+            employmentRateView.setText("Employment Rate: " + municipality.getEmploymentRate().toString() + "% (2022)");
+            dataManager.setData("employmentRate", municipality.getEmploymentRate().toString());
         }
 
-        if (summerCottages != null) {
-            summerCottagesView.setText("Summer Cottages: " + (int) Math.round(summerCottages) + " (2022)");
-            dataManager.setData("summerCottages", employmentRate.toString());
+        if (municipality.getSummerCottages() != null) {
+            summerCottagesView.setText("Summer Cottages: " + (int) Math.round(municipality.getSummerCottages()) + " (2022)");
+            dataManager.setData("summerCottages", municipality.getSummerCottages().toString());
         }
 
-        if (weather != null) {
-            weatherView.setText("Current weather:" +
-                                "Temperature (C): "+ BigDecimal.valueOf((Double) weather.get("temp") - 273.1).round(new MathContext(2, RoundingMode.HALF_UP))+"\n" +
-                                "Wind Speed (m/s): " + weather.get("wind_speed"));
-            dataManager.setData("weatherTemperature", (BigDecimal.valueOf((Double) weather.get("temp") - 273.1).round(new MathContext(2, RoundingMode.HALF_UP)).toString()));
-            dataManager.setData("weatherWindSpeed", weather.get("wind_speed").toString());
+        if (municipality.getWeather() != null) {
+            weatherView.setText("Current weather:\n" +
+                                "Temperature (C): "+ BigDecimal.valueOf((Double) municipality.getWeather().getTemperature() - 273.1).round(new MathContext(2, RoundingMode.HALF_UP))+"\n" +
+                                "Wind Speed (m/s): " + municipality.getWeather().getWindSpeed());
+            dataManager.setData("weatherTemperature", (BigDecimal.valueOf((Double) municipality.getWeather().getTemperature() - 273.1).round(new MathContext(2, RoundingMode.HALF_UP)).toString()));
+            dataManager.setData("weatherWindSpeed", municipality.getWeather().getWindSpeed().toString());
         }
     }
 
