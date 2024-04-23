@@ -1,7 +1,11 @@
 package com.example.olioharkka;
 
+import static com.example.olioharkka.ApiClient.getAmountOfSummerCottages;
+import static com.example.olioharkka.ApiClient.getEmploymentRate;
 import static com.example.olioharkka.ApiClient.getMunicipalityPopulation;
+import static com.example.olioharkka.ApiClient.getPopulationChange;
 import static com.example.olioharkka.ApiClient.getWeather;
+import static com.example.olioharkka.ApiClient.getWorkSelfSufficiency;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -23,6 +27,7 @@ import androidx.fragment.app.FragmentManager;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -35,6 +40,8 @@ public class QuizActivity extends AppCompatActivity {
     private List<QuizQuestion> quizItems;
     private int score;
 
+    private String correctAnswer, sOption1, sOption2;
+    private double dOption1, dOption2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,70 +95,109 @@ public class QuizActivity extends AppCompatActivity {
     }
 
     private void initializeQuizQuestions() {
-        //tähän muuttujia mihin tallennetaan oikeat vastaukset ja vastausvaihtoehdot
-        // ATM TULEE null HUMIDITYSSÄ?
-
         // Initializes quiz questions
         // Modifies anwers options & correct answers based on chosen municipality
         DataManager dataManager = DataManager.getInstance();
         String municipality = dataManager.getData("municipality");
+
         Integer municipalityPopulation = getMunicipalityPopulation(municipality);
-        municipalityPopulation = Math.round(municipalityPopulation / 10000) * 10000;
+        municipalityPopulation = (int) Math.round(municipalityPopulation / 10000) * 10000;
 
         Random random = new Random();
+
         int variation = random.nextInt(100000) - 50000;
         int option1 = (municipalityPopulation + variation);
         variation = random.nextInt(100000) - 50000;
         int option2 = municipalityPopulation - variation;
-        option1 = Math.abs(Math.round(option1 / 10000) * 10000);
-        option2 = Math.abs(Math.round(option2 / 10000) * 10000);
+        dOption1 = Math.abs(Math.round(option1 / 10000) * 10000);
+        dOption2 = Math.abs(Math.round(option2 / 10000) * 10000);
 
-        quizItems.add(new QuizQuestion("Municipality population?", municipalityPopulation.toString(), new String[]{municipalityPopulation.toString(), String.valueOf(option1), String.valueOf(option2)}));
+        correctAnswer = municipalityPopulation.toString();
+        sOption1 = String.valueOf(dOption1);
+        sOption2 = String.valueOf(dOption2);
+
+        quizItems.add(new QuizQuestion("Municipality population?", correctAnswer, new String[]{correctAnswer, sOption1, sOption2}));
+
+        correctAnswer = String.valueOf(getPopulationChange(municipality));
+        sOption1 = String.valueOf(Math.abs(Math.round(1000)-500));
+        sOption2 = String.valueOf(Math.abs(Math.round(1000)-250));
+
+        quizItems.add(new QuizQuestion("What is the population change in the municipality", correctAnswer, new String[]{correctAnswer, sOption1, sOption2}));
 
         Map<String, Object> weatherMap = getWeather(municipality);
         BigDecimal temperature = BigDecimal.valueOf((Double) weatherMap.get("temp") - 273.1).round(new MathContext(2, RoundingMode.HALF_UP));
-        String sTemperature = temperature + " C";
-        double dOption1 = Math.round(random.nextInt(15)-5.2);
-        double dOption2 = Math.round(random.nextInt(30)-5.5);
-        String sOption1 = dOption1 + " C";
-        String sOption2 = dOption2 + " C";
+        correctAnswer = String.valueOf(temperature) + " C";
+        sOption1 = String.valueOf(Math.round(random.nextInt(15)-5.2)) + " C";
+        sOption2 = String.valueOf(Math.round(random.nextInt(30)-5.5)) + " C";
 
-        quizItems.add(new QuizQuestion("What is the current temperature in the municipality?", sTemperature, new String[]{sTemperature, sOption1, sOption2}));
+        quizItems.add(new QuizQuestion("What is the current temperature in the municipality?", correctAnswer, new String[]{correctAnswer, sOption1, sOption2}));
 
-        String wind = weatherMap.get("wind_speed") + " m/s";
-        dOption1 = Math.abs(Math.round(random.nextInt(15)-5.2));
-        dOption2 = Math.abs(Math.round(random.nextInt(30)-5.5));
-        sOption1 = dOption1 + " m/s";
-        sOption2 = dOption2 + " m/s";
+        correctAnswer = String.valueOf(weatherMap.get("wind_speed")) + " m/s";
+        sOption1 = String.valueOf(Math.abs(Math.round(random.nextInt(15)-5.2))) + " m/s";
+        sOption2 = String.valueOf(Math.abs(Math.round(random.nextInt(9)+5.5))) + " m/s";
 
-        quizItems.add(new QuizQuestion("What is the wind situation in the moment?", wind, new String[]{wind, sOption1, sOption2}));
+        quizItems.add(new QuizQuestion("What is the wind situation in the moment?", correctAnswer, new String[]{correctAnswer, sOption1, sOption2}));
 
-        String humidity = weatherMap.get("HUMIDITY") + " %";
-        dOption1 = Math.abs(Math.round(random.nextInt(100)-50));
-        dOption2 = Math.abs(Math.round(random.nextInt(100)-50));
-        sOption1 = dOption1 + " %";
-        sOption2 = dOption2 + " %";
+        correctAnswer = String.valueOf(getWorkSelfSufficiency(municipality).toString());
+        sOption1 = String.valueOf(Math.abs(Math.round(random.nextInt(100)-50)));
+        sOption2 = String.valueOf(Math.abs(Math.round(random.nextInt(100)+50)));
 
-        quizItems.add(new QuizQuestion("What is the humidity at the moment?", humidity, new String[]{humidity, sOption1, sOption2}));
-        quizItems.add(new QuizQuestion("What is the support for the Perussuomalaiset party in the municipality?", "Correct answer", new String[]{"Correct answer", "Option 1", "Option 2"}));
-        quizItems.add(new QuizQuestion("What is the support for the Vihreät party in the municipality?", "Correct answer", new String[]{"Correct answer", "Option 1", "Option 2"}));
-        quizItems.add(new QuizQuestion("What is the average net income in the municipality?", "Correct answer", new String[]{"Correct answer", "Option 1", "Option 2"}));
-        quizItems.add(new QuizQuestion("What is the support for the SDP party in the municipality?", "Correct answer", new String[]{"Correct answer", "Option 1", "Option 2"}));
+        quizItems.add(new QuizQuestion("What is the Work Self Sufficiency in the municipality?", correctAnswer, new String[]{correctAnswer, sOption1, sOption2}));
 
-        String correctAnswer = "Finns Party (Perussuomalaiset)";
-        sOption1 = chooseRandomParty(correctAnswer);
-        System.out.println("Chosen Party: " + sOption1);
-        sOption2 = chooseRandomParty(correctAnswer);
+        correctAnswer = String.valueOf(getEmploymentRate(municipality)) + " %";
+        sOption1 = String.valueOf(Math.abs(Math.round(random.nextInt(100) - 30.5))) + " %";
+        sOption2 = String.valueOf(Math.abs(Math.round(random.nextInt(100)-10.2))) + " %";
 
-        quizItems.add(new QuizQuestion("What is the most popular party in the municipality?", correctAnswer, new String[]{correctAnswer, sOption1, sOption2}));
+        quizItems.add(new QuizQuestion("What is the Employment Rate for the municipality?", correctAnswer, new String[]{correctAnswer, sOption1, sOption2}));
 
-        correctAnswer = "Finns Party (Perussuomalaiset)\"";
-        sOption1 = chooseRandomParty(correctAnswer);
-        System.out.println("Chosen Party: " + sOption1);
-        sOption2 = chooseRandomParty(correctAnswer);
+        correctAnswer = String.valueOf(getAmountOfSummerCottages(municipality));
+        sOption1 = String.valueOf(Math.abs(Math.round(random.nextInt(1000)-500)));
+        sOption2 = String.valueOf(Math.abs(Math.round(random.nextInt(1000)+250)));
 
-        quizItems.add(new QuizQuestion("What is the least popular party in the municipality?", correctAnswer, new String[]{correctAnswer, sOption1, sOption2}));
+        quizItems.add(new QuizQuestion("What is the amount of summer cottages in the municipality?", correctAnswer, new String[]{correctAnswer, sOption1, sOption2}));
+        if (getPopulationChange(municipality) > 0) {
+            correctAnswer = "Increased";
+            sOption1 = "Decreased";
+            sOption2 = "Stayed the same";
+        } else if (getPopulationChange(municipality) < 0) {
+            correctAnswer = "Decreased";
+            sOption1 = "Increased";
+            sOption2 = "Stayed the same";
+        } else if (getPopulationChange(municipality) == 0) {
+            correctAnswer = "Stayed the same";
+            sOption1 = "Increased";
+            sOption2 = "Decreased";
+        }
+        quizItems.add(new QuizQuestion("Has the population increased or decreased from the previous year?", correctAnswer, new String[]{correctAnswer, sOption1, sOption2}));
+        if (getEmploymentRate(municipality) > 50) {
+            correctAnswer = "Over 50 %";
+            sOption1 = "Under 50 %";
+            sOption2 = "Exactly 50 %";
+        } else if (getEmploymentRate(municipality) < 50) {
+            correctAnswer = "Under 50 %";
+            sOption1 = "Over 50 %";
+            sOption2 = "Exactly 50 %";
+        } else if (getEmploymentRate(municipality) == 50) {
+            correctAnswer = "Exactly 50 %";
+            sOption1 = "Over 50 %";
+            sOption2 = "Under 50 %";
+        }
+        quizItems.add(new QuizQuestion("Is the employment rate over or under 50 % ?", correctAnswer, new String[]{correctAnswer, sOption1, sOption2}));
 
+        if (getEmploymentRate(municipality) > 0) {
+            correctAnswer = "Over 0 degrees (C)";
+            sOption1 = "Under 0 degrees (C)";
+            sOption2 = "Exactly 0 degrees (C)";
+        } else if (getEmploymentRate(municipality) < 0) {
+            correctAnswer = "Under 0 degrees (C)";
+            sOption1 = "Over 0 degrees (C)";
+            sOption2 = "Exactly 0 degrees (C)";
+        } else if (getEmploymentRate(municipality) == 0) {
+            correctAnswer = "Exactly 0 degrees (C)";
+            sOption1 = "Over 0 degrees (C)";
+            sOption2 = "Under 0 degrees (C)";
+        }
+        quizItems.add(new QuizQuestion("Is the temperature over or under 0 degrees (C)?", correctAnswer, new String[]{correctAnswer, sOption1, sOption2}));
         // Creates a list that shuffles the answer options order
         List<String[]> shuffledOptions = new ArrayList<>();
 
@@ -237,8 +283,6 @@ public class QuizActivity extends AppCompatActivity {
     }
 
     public void submitAnswers(View view) {
-        // Sitten pitää katsoa että kysymykset & vastaukset mätsää, otetaan suoraan juuson koodista
-
         // Submits the final score to the outcome layout and starts that activity
         RadioGroup rgQuiz = findViewById(R.id.rgQuiz);
         int selectedRadioButtonId = rgQuiz.getCheckedRadioButtonId();
@@ -261,29 +305,6 @@ public class QuizActivity extends AppCompatActivity {
         intent.putExtra("SCORE", score);
         startActivity(intent);
         finish();
-    }
-
-    private static String chooseRandomParty(String correctParty) {
-        // Stores the main political parties and returns a party that differs from the input
-        List<String> politicalParties = Arrays.asList(
-                "National Coalition Party (Kansallinen Kokoomus)",
-                "Social Democratic Party of Finland (Suomen Sosialidemokraattinen Puolue)",
-                "Finns Party (Perussuomalaiset)",
-                "Centre Party (Keskusta)",
-                "Green League (Vihreä liitto)",
-                "Left Alliance (Vasemmistoliitto)",
-                "Swedish People's Party of Finland (Svenska folkpartiet i Finland)",
-                "Christian Democrats (Kristillisdemokraatit)",
-                "Movement Now (Liike Nyt)",
-                "Pirate Party of Finland (Piraattipuolue)"
-        );
-
-        Random random = new Random();
-        String chosenParty;
-        do {
-            chosenParty = politicalParties.get(random.nextInt(politicalParties.size()));
-        } while (chosenParty.equals(correctParty));
-        return chosenParty;
     }
 
     public int getScore() {
